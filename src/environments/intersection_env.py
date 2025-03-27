@@ -18,7 +18,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle, Circle
 import random
-from typing import Dict, Tuple, Optional, Any, List, Union
+from typing import Dict, Tuple, Optional, Any
 
 
 class IntersectionEnv(gym.Env):

@@ -1,0 +1,140 @@
+# Experiment Configuration for Traffic Signal Control
+# Based on the paper "Adaptive Traffic Signal Control with Reinforcement Learning"
+
+# Environment configurations
+environments:
+  # Single intersection configuration
+  single:
+    max_time_steps: 1000
+    arrival_rates:
+      north: 0.2
+      south: 0.2
+      east: 0.3
+      west: 0.3
+    departure_rates:
+      base: 0.4
+      max_departure: 3
+    max_queue_length: 30
+    max_wait_time: 100
+    use_density: true
+    use_waiting_time: true
+    reward_weights:
+      queue_length: -1.0
+      wait_time: -0.5
+      throughput: 1.0
+      switch_penalty: -2.0
+    yellow_time: 2
+    min_green_time: 5
+    
+  # Multi-intersection configurations
+  multi:
+    topologies:
+      - 2x2_grid   # 4 intersections in a grid
+      - corridor    # 3 intersections in a line
+    control_modes:
+      - centralized    # Single agent controls all intersections
+      - decentralized  # Each intersection has its own agent
+    max_time_steps: 1000
+    arrival_rates:
+      default: 0.2
+      peak: 0.4
+    departure_rates:
+      base: 0.4
+      max_departure: 3
+    max_queue_length: 30
+    max_wait_time: 100
+    reward_weights:
+      queue_length: -1.0
+      wait_time: -0.5
+      throughput: 1.0
+      switch_penalty: -2.0
+      coordination_bonus: 0.5  # For centralized control
+    yellow_time: 2
+    min_green_time: 5
+
+# Experimental scenarios
+scenarios:
+  # Scenario 1: Normal traffic
+  normal:
+    description: "Uniform traffic demand across all approaches"
+    arrival_pattern: "uniform"
+    arrival_rates:
+      north: 0.2
+      south: 0.2
+      east: 0.2
+      west: 0.2
+    
+  # Scenario 2: Unbalanced traffic
+  unbalanced:
+    description: "High E-W traffic, low N-S traffic"
+    arrival_pattern: "unbalanced"
+    arrival_rates:
+      north: 0.1
+      south: 0.1
+      east: 0.4
+      west: 0.4
+      
+  # Scenario 3: Variable demand
+  variable:
+    description: "Time-varying traffic patterns simulating peak hours"
+    arrival_pattern: "variable"
+    phases:
+      - name: "morning_peak"
+        duration: 300
+        arrival_rates:
+          north: 0.3
+          south: 0.4
+          east: 0.2
+          west: 0.1
+      - name: "midday"
+        duration: 400
+        arrival_rates:
+          north: 0.2
+          south: 0.2
+          east: 0.2
+          west: 0.2
+      - name: "evening_peak"
+        duration: 300
+        arrival_rates:
+          north: 0.1
+          south: 0.4
+          east: 0.3
+          west: 0.3
+
+# Evaluation metrics
+evaluation:
+  metrics:
+    - average_waiting_time
+    - average_queue_length
+    - throughput
+    - co2_emissions
+    - travel_time
+  num_episodes: 10
+  render: false
+  log_metrics_interval: 10
+  
+# Logging and output
+logging:
+  log_dir: "../logs"
+  save_models: true
+  save_interval: 50
+  tensorboard: true
+  plot_metrics: true
+  record_video: false
+  video_interval: 100
+
+# Comparison methods
+baselines:
+  - name: "fixed_timing"
+    description: "Fixed-time signal control with predefined timing patterns"
+    parameters:
+      cycle_length: 60
+      green_splits: [0.5, 0.5]  # 50% green time for each phase
+      
+  - name: "actuated"
+    description: "Vehicle-actuated signal control"
+    parameters:
+      min_green: 5
+      max_green: 30
+      extension_time: 3
+      gap_threshold: 2

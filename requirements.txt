@@ -1,20 +1,24 @@
-# Core requirements
+# Core dependencies
 numpy>=1.21.0
-matplotlib>=3.5.0
+torch>=1.9.0
 gymnasium>=0.28.1
-torch>=2.0.0
-networkx>=2.8.0
-tensorboard>=2.10.0
+matplotlib>=3.5.0
+pandas>=1.3.0
+seaborn>=0.11.2
+pyyaml>=6.0
+tqdm>=4.62.0
+scipy>=1.7.0
 
-# For statistical analysis
-pandas>=1.5.0 
-scipy>=1.9.0
+# Traffic simulation dependencies
+networkx>=2.6.0
 
-# For visualization
-tqdm>=4.64.0
-plotly>=5.10.0
-seaborn>=0.12.0
+# Visualization dependencies
+pillow>=8.3.0
 
-# For multi-processing
-joblib>=1.2.0
-ray[rllib]>=2.3.0
+# Utility and development tools
+pytest>=6.2.5
+black>=21.9b0
+mypy>=0.910
+tensorboard>=2.7.0
+jupyterlab>=3.2.0
+ipywidgets>=7.6.0

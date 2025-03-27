@@ -1,131 +1,166 @@
-# Adaptive Traffic Signal Control using Reinforcement Learning
+# Traffic Signal Control with Reinforcement Learning
 
-## Overview
-This paper implements adaptive traffic signal control through reinforcement learning. We use multiple RL algorithms to optimize traffic flow at both single and multiple intersections, comparing their performance against traditional control methods.
+This repository implements adaptive traffic signal control using reinforcement learning (RL) techniques, as described in the paper "Adaptive Traffic Signal Control with Reinforcement Learning".
 
-![Traffic Signal Control Demo](paper/images/traffic_signal_demo.png)
+## 📋 Project Overview
 
-## Features
-- Single intersection and multi-intersection traffic environments
-- Implementation of Q-learning, DQN, A2C, and PPO algorithms
-- Advanced state representations capturing queue lengths, waiting times, and traffic density
-- Multi-objective reward function balancing throughput, delay, and signal stability
-- Visualization tools for traffic flow and performance metrics
-- Support for both centralized and decentralized control in multi-intersection scenarios
+This project explores the application of reinforcement learning for adaptive traffic signal control. Traditional traffic control methods like fixed-timing and actuated control are often suboptimal in dynamic traffic conditions. Reinforcement learning offers a data-driven approach to optimize signal timing in real-time, leading to reduced congestion, shorter waiting times, and improved throughput.
 
-## Project Structure
-```
-.
-├── paper/                 # Research paper and images
-├── src/
-│   ├── agents/            # RL agent implementations
-│   │   ├── a2c_agent.py   # A2C algorithm
-│   │   ├── dqn_agent.py   # DQN algorithm
-│   │   └── ppo_agent.py   # PPO algorithm
-│   ├── config/            # Configuration files
-│   ├── data/              # Data storage
-│   ├── demos/             # Demo scripts and visualizations
-│   ├── environments/      # Traffic environments
-│   │   ├── intersection_env.py  # Single intersection
-│   │   └── traffic_env.py       # Multiple intersections
-│   ├── logs/              # Training logs
-│   ├── models/            # Neural network models
-│   ├── scripts/           # Training and evaluation scripts
-│   ├── tests/             # Test files
-│   └── utils/             # Utility functions
-└── requirements.txt       # Dependencies
-```
+The implementation includes:
 
-## Installation
+- Single and multi-intersection traffic environments
+- Multiple RL algorithms (DQN, A2C, PPO, Q-learning)
+- Traditional baseline controllers (fixed-timing, actuated)
+- Comprehensive evaluation framework
+- Visualization tools
 
-### Prerequisites
-- Python 3.8 or higher
-- pip package manager
+## 🚦 Environments
 
-### Setup
-1. Clone the repository:
+### Single Intersection
+
+The `IntersectionEnv` simulates a four-way intersection with configurable traffic patterns. The agent controls the traffic signals, deciding when to change the signal phase to optimize traffic flow.
+
+### Multi-Intersection Network
+
+The `TrafficMultiEnv` extends the simulation to multiple connected intersections, supporting both centralized and decentralized control strategies.
+
+## 🤖 Agents
+
+The following control methods are implemented:
+
+### RL Agents
+
+- **DQN (Deep Q-Network)**: Includes double DQN, prioritized experience replay, and n-step returns
+- **A2C (Advantage Actor-Critic)**: Policy gradient method with baseline value function
+- **PPO (Proximal Policy Optimization)**: More stable policy updates with clipped objective
+- **Q-Learning**: Tabular approach for baseline comparison
+
+### Traditional Controllers
+
+- **Fixed-timing**: Predefined cycle lengths and green splits
+- **Actuated**: Vehicle-actuated control with extension logic
+- **Webster**: Adaptive signal timing based on the Webster formula
+
+## 🔧 Installation
+
 ```bash
-git clone https://github.com/your-username/traffic-signal-rl.git
+# Clone repository
+git clone https://github.com/username/traffic-signal-rl.git
 cd traffic-signal-rl
-```
 
-2. Create and activate a virtual environment (recommended):
-```bash
+# Create virtual environment
 python -m venv venv
-# On Windows
-venv\Scripts\activate
-# On Unix or MacOS
-source venv/bin/activate
-```
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-3. Install dependencies:
-```bash
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-## Usage
+## 🚀 Usage
 
-### Running the Demo
-To see a visualization of traffic signal control:
+### Training
+
+To train an agent on a single intersection:
+
+```bash
+python src/scripts/train.py --algorithm dqn --env_type single --episodes 500
+```
+
+For multi-intersection scenarios:
+
+```bash
+python src/scripts/train.py --algorithm a2c --env_type multi --topology 2x2_grid --control_mode decentralized
+```
+
+### Evaluation
+
+To evaluate agents across different traffic scenarios:
+
+```bash
+python src/scripts/evaluate.py --methods dqn a2c ppo fixed actuated --env_type single --scenario normal
+```
+
+For visualizing traffic state:
+
 ```bash
 python src/demos/traffic_signal_demo.py
 ```
 
-This will show how a reinforcement learning agent controls a traffic signal at a single intersection, with visualizations of traffic flow and performance metrics.
+## 📊 Results
 
-### Training a Model
-To train an RL agent on the traffic environment:
-```bash
-python src/scripts/train.py --algorithm dqn --episodes 1000
+The framework provides comprehensive evaluation metrics:
+
+- Average waiting time
+- Average queue length
+- Throughput
+- Travel time
+- CO2 emissions (estimated)
+
+Visualization tools include:
+
+- Learning curves
+- Performance comparisons
+- Traffic state visualizations
+- Statistical significance tests
+
+## 📂 Project Structure
+
+```
+traffic-signal-rl/
+├── paper/                  # Paper and related materials
+├── src/                    # Source code
+│   ├── agents/             # RL agent implementations
+│   ├── environments/       # Traffic environments
+│   ├── utils/              # Utility functions
+│   ├── demos/              # Interactive demonstrations
+│   ├── scripts/            # Training and evaluation scripts
+│   └── config/             # Configuration files
+├── logs/                   # Training logs
+├── results/                # Evaluation results
+└── tests/                  # Test scripts
 ```
 
-Supported algorithms: `qlearning`, `dqn`, `a2c`, `ppo`
+## ⚙️ Configuration
 
-### Running Experiments
-For full experimental evaluation with different algorithms and scenarios:
-```bash
-python src/scripts/evaluate.py --scenario single_intersection
-```
+Configuration files are located in the `src/config` directory:
 
-Supported scenarios: `single_intersection`, `grid_2x2`, `corridor`
+- `config.yaml`: Environment and experiment settings
+- `hyperparameters.yaml`: Algorithm-specific hyperparameters
 
-### Visualizing Results
-```bash
-python src/scripts/visualize.py --log_dir src/logs/dqn_experiment
-```
+## 🔍 Experiments
 
-## Implementation Details
+The paper demonstrates several experiments:
 
-### Environment
-- State space: queue lengths, waiting times, traffic density, signal phase
-- Action space: keep current phase or switch to next phase
-- Reward: weighted sum of queue lengths, waiting times, throughput, and signal changes
+1. **Single intersection with varying traffic conditions**
+2. **2×2 grid with coordinated traffic flow**
+3. **Variable demand scenario simulating peak/off-peak hours**
 
-### Network Architectures
-- DQN: 3-layer feed-forward network with layer normalization
-- Actor-Critic: Shared feature extractor with separate policy and value heads
 
-### Training Infrastructure
-- Experience replay with prioritization
-- N-step returns for better credit assignment
-- Parallel environment sampling
+## 📝 Citation
 
-Refer to the paper for detailed descriptions of network architectures, hyperparameters, and the reward function design.
-
-## Citation
-If you use this code in your research, please cite:
+If you use this code in your research, please cite our paper:
 
 ```bibtex
-@article{
-  author = {Ali, Izhar and Haileyesus, Million},
-  title = {Adaptive Traffic Signal Control with Reinforcement Learning},
-  journal = {},
-  year = {2025},
+@article{author2023adaptive,
+  title={Adaptive Traffic Signal Control with Reinforcement Learning},
+  author={Ali, Izhar and Haileyesus, Million},
+  journal={Journal Name},
+  year={2025},
+  volume={},
+  pages={}
 }
 ```
 
-## License
-[MIT License](LICENSE)
+## 📄 License
 
-## Contributing
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🤝 Contributing
+
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request

@@ -1,0 +1,176 @@
+# Hyperparameters for Reinforcement Learning Algorithms
+# Based on the paper "Adaptive Traffic Signal Control with Reinforcement Learning"
+
+# Common settings for all algorithms
+common:
+  # Training settings
+  num_episodes: 500
+  max_episode_steps: 1000
+  eval_frequency: 20
+  eval_episodes: 5
+  checkpoint_frequency: 50
+  
+  # Neural network architecture
+  hidden_sizes: [256, 256, 128]
+  activation: "relu"
+  use_layer_norm: true
+  weight_init: "kaiming"
+  
+  # Optimizer settings
+  optimizer: "adam"
+  weight_decay: 0.01
+  gradient_clip: 1.0
+  
+# DQN Hyperparameters
+dqn:
+  # Basic DQN parameters
+  learning_rate: 5e-4
+  gamma: 0.95
+  buffer_size: 500000
+  batch_size: 512
+  target_update_freq: 500
+  
+  # Exploration parameters
+  epsilon_start: 1.0
+  epsilon_end: 0.05
+  epsilon_decay_steps: 50000
+  
+  # Advanced DQN techniques
+  double_dqn: true
+  dueling_dqn: false
+  n_step_returns: 5
+  
+  # Prioritized experience replay
+  use_per: true
+  per_alpha: 0.6
+  per_beta_start: 0.4
+  per_beta_end: 1.0
+  per_beta_steps: 100000
+  
+  # Architectural enhancements
+  use_noisy_nets: false
+  distributional: false
+
+# A2C Hyperparameters
+a2c:
+  # Learning rates
+  actor_learning_rate: 5e-4
+  critic_learning_rate: 5e-4
+  
+  # Discount factors
+  gamma: 0.95
+  gae_lambda: 0.95
+  
+  # Loss coefficients
+  value_coef: 0.5
+  entropy_coef: 0.01
+  
+  # Update parameters
+  num_envs: 8
+  mini_batch_size: 512
+  num_steps: 5
+  
+  # GAE parameters
+  normalize_advantage: true
+  
+  # Learning rate scheduling
+  lr_warmup_steps: 1000
+  lr_decay: 0.98
+  
+# PPO Hyperparameters
+ppo:
+  # Learning rates
+  learning_rate: 5e-4
+  
+  # Discount factors
+  gamma: 0.95
+  gae_lambda: 0.95
+  
+  # PPO-specific parameters
+  clip_range: 0.2
+  ppo_epochs: 4
+  ppo_mini_batch_size: 512
+  
+  # Loss coefficients
+  value_coef: 0.5
+  entropy_coef: 0.01
+  
+  # KL divergence parameters 
+  target_kl: 0.015
+  
+  # Update parameters
+  num_envs: 8
+  mini_batch_size: 512
+  horizon: 128
+  
+  # Advantage parameters
+  normalize_advantage: true
+  
+  # Learning rate scheduling
+  lr_warmup_steps: 1000
+  use_linear_lr_decay: true
+  
+# Tabular Q-Learning Hyperparameters (for comparison)
+qlearning:
+  learning_rate: 0.1
+  gamma: 0.95
+  epsilon_start: 1.0
+  epsilon_end: 0.01
+  epsilon_decay: 0.995
+  state_discretization: 5  # Number of buckets for continuous state variables
+  
+# Environment-specific hyperparameters
+environment_specific:
+  # Single intersection
+  single:
+    dqn:
+      state_dim: 14
+      action_dim: 2
+      prioritize_queue_lengths: true
+      
+    a2c:
+      state_dim: 14
+      action_dim: 2
+      
+    ppo:
+      state_dim: 14
+      action_dim: 2
+      
+  # Multi-intersection - centralized control
+  multi_centralized:
+    dqn:
+      # Based on 2x2 grid with 4 intersections
+      state_dim: 64  # 16 per intersection × 4 intersections
+      action_dim: 16  # 4 possible actions × 4 intersections
+      hidden_sizes: [512, 256, 128]  # Larger network for higher dimension
+      
+    a2c:
+      state_dim: 64
+      action_dim: 16
+      hidden_sizes: [512, 256, 128]
+      
+    ppo:
+      state_dim: 64
+      action_dim: 16
+      hidden_sizes: [512, 256, 128]
+      
+  # Multi-intersection - decentralized control
+  multi_decentralized:
+    dqn:
+      state_dim: 18  # 14 local + 4 neighboring
+      action_dim: 2
+      
+    a2c:
+      state_dim: 18
+      action_dim: 2
+      
+    ppo:
+      state_dim: 18
+      action_dim: 2
+      
+# Hardware settings
+hardware:
+  device: "cuda"  # "cuda" or "cpu"
+  use_mixed_precision: true
+  cuda_graph_optimization: true
+  num_workers: 4

@@ -16,11 +16,9 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 import networkx as nx
 import random
 from typing import Dict, Tuple, List, Optional, Any, Union
-from collections import defaultdict
 
 
 class TrafficNetwork:
