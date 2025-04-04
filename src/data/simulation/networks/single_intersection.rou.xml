@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <!-- Vehicle types -->
+    <vType id="passenger" length="5.0" minGap="2.5" maxSpeed="15.0" accel="2.0" decel="4.5" sigma="0.5"/>
+    <vType id="truck" length="7.5" minGap="3.0" maxSpeed="13.0" accel="1.5" decel="3.5" sigma="0.5"/>
+    
+    <!-- Routes -->
+    <!-- North to South (straight) -->
+    <route id="route_ns" edges="north_to_center center_to_south"/>
+    <!-- North to East (right) -->
+    <route id="route_ne" edges="north_to_center center_to_east"/>
+    <!-- North to West (left) -->
+    <route id="route_nw" edges="north_to_center center_to_west"/>
+    
+    <!-- South to North (straight) -->
+    <route id="route_sn" edges="south_to_center center_to_north"/>
+    <!-- South to East (left) -->
+    <route id="route_se" edges="south_to_center center_to_east"/>
+    <!-- South to West (right) -->
+    <route id="route_sw" edges="south_to_center center_to_west"/>
+    
+    <!-- East to West (straight) -->
+    <route id="route_ew" edges="east_to_center center_to_west"/>
+    <!-- East to North (right) -->
+    <route id="route_en" edges="east_to_center center_to_north"/>
+    <!-- East to South (left) -->
+    <route id="route_es" edges="east_to_center center_to_south"/>
+    
+    <!-- West to East (straight) -->
+    <route id="route_we" edges="west_to_center center_to_east"/>
+    <!-- West to North (left) -->
+    <route id="route_wn" edges="west_to_center center_to_north"/>
+    <!-- West to South (right) -->
+    <route id="route_ws" edges="west_to_center center_to_south"/>
+    
+    <!-- Flow definitions for various traffic patterns -->
+    <flow id="flow_ns" type="passenger" route="route_ns" begin="0" end="3600" probability="0.15"/>
+    <flow id="flow_ne" type="passenger" route="route_ne" begin="0" end="3600" probability="0.05"/>
+    <flow id="flow_nw" type="passenger" route="route_nw" begin="0" end="3600" probability="0.05"/>
+    
+    <flow id="flow_sn" type="passenger" route="route_sn" begin="0" end="3600" probability="0.15"/>
+    <flow id="flow_se" type="passenger" route="route_se" begin="0" end="3600" probability="0.05"/>
+    <flow id="flow_sw" type="passenger" route="route_sw" begin="0" end="3600" probability="0.05"/>
+    
+    <flow id="flow_ew" type="passenger" route="route_ew" begin="0" end="3600" probability="0.15"/>
+    <flow id="flow_en" type="passenger" route="route_en" begin="0" end="3600" probability="0.05"/>
+    <flow id="flow_es" type="passenger" route="route_es" begin="0" end="3600" probability="0.05"/>
+    
+    <flow id="flow_we" type="passenger" route="route_we" begin="0" end="3600" probability="0.15"/>
+    <flow id="flow_wn" type="passenger" route="route_wn" begin="0" end="3600" probability="0.05"/>
+    <flow id="flow_ws" type="passenger" route="route_ws" begin="0" end="3600" probability="0.05"/>
+    
+    <!-- Add some trucks -->
+    <flow id="flow_truck_ns" type="truck" route="route_ns" begin="0" end="3600" probability="0.02"/>
+    <flow id="flow_truck_ew" type="truck" route="route_ew" begin="0" end="3600" probability="0.02"/>
+</routes> 

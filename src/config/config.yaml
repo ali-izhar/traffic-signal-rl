@@ -11,13 +11,6 @@ environments:
       south: 0.2
       east: 0.3
       west: 0.3
-    departure_rates:
-      base: 0.4
-      max_departure: 3
-    max_queue_length: 30
-    max_wait_time: 100
-    use_density: true
-    use_waiting_time: true
     reward_weights:
       queue_length: -1.0
       wait_time: -0.5
@@ -28,29 +21,27 @@ environments:
     
   # Multi-intersection configurations
   multi:
-    topologies:
-      - 2x2_grid   # 4 intersections in a grid
-      - corridor    # 3 intersections in a line
-    control_modes:
-      - centralized    # Single agent controls all intersections
-      - decentralized  # Each intersection has its own agent
     max_time_steps: 1000
+    topology: "2x2_grid"
+    control_mode: "decentralized"
     arrival_rates:
       default: 0.2
       peak: 0.4
-    departure_rates:
-      base: 0.4
-      max_departure: 3
-    max_queue_length: 30
-    max_wait_time: 100
     reward_weights:
       queue_length: -1.0
       wait_time: -0.5
       throughput: 1.0
       switch_penalty: -2.0
-      coordination_bonus: 0.5  # For centralized control
     yellow_time: 2
     min_green_time: 5
+
+  sumo:
+    max_time_steps: 1000
+    reward_weights:
+      queue_length: -1.0
+      wait_time: -0.5
+      throughput: 1.0
+      switch_penalty: -2.0
 
 # Experimental scenarios
 scenarios:
@@ -61,18 +52,18 @@ scenarios:
     arrival_rates:
       north: 0.2
       south: 0.2
-      east: 0.2
-      west: 0.2
+      east: 0.3
+      west: 0.3
     
   # Scenario 2: Unbalanced traffic
   unbalanced:
     description: "High E-W traffic, low N-S traffic"
     arrival_pattern: "unbalanced"
     arrival_rates:
-      north: 0.1
-      south: 0.1
-      east: 0.4
-      west: 0.4
+      north: 0.4
+      south: 0.4
+      east: 0.1
+      west: 0.1
       
   # Scenario 3: Variable demand
   variable:
@@ -80,25 +71,25 @@ scenarios:
     arrival_pattern: "variable"
     phases:
       - name: "morning_peak"
-        duration: 300
+        duration: 1200
         arrival_rates:
-          north: 0.3
-          south: 0.4
-          east: 0.2
-          west: 0.1
-      - name: "midday"
-        duration: 400
+          north: 0.4
+          south: 0.1
+          east: 0.3
+          west: 0.2
+      - name: "mid_day"
+        duration: 1200
         arrival_rates:
           north: 0.2
           south: 0.2
           east: 0.2
           west: 0.2
       - name: "evening_peak"
-        duration: 300
+        duration: 1200
         arrival_rates:
           north: 0.1
           south: 0.4
-          east: 0.3
+          east: 0.2
           west: 0.3
 
 # Evaluation metrics
@@ -125,16 +116,24 @@ logging:
 
 # Comparison methods
 baselines:
-  - name: "fixed_timing"
-    description: "Fixed-time signal control with predefined timing patterns"
+  - name: "fixed"
     parameters:
       cycle_length: 60
-      green_splits: [0.5, 0.5]  # 50% green time for each phase
-      
+      green_splits: [0.5, 0.5]
+      yellow_time: 3
+      min_phase_time: 5
+  
   - name: "actuated"
-    description: "Vehicle-actuated signal control"
     parameters:
       min_green: 5
       max_green: 30
-      extension_time: 3
+      extension_time: 2
       gap_threshold: 2
+      yellow_time: 3
+  
+  - name: "webster"
+    parameters:
+      saturation_flow: 1800
+      lost_time_per_phase: 2
+      min_cycle: 30
+      max_cycle: 120

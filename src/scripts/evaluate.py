@@ -29,6 +29,7 @@ sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 # Import environments
 from environments.intersection_env import IntersectionEnv
 from environments.traffic_env import TrafficMultiEnv
+from environments.sumo_env import SUMOIntersectionEnv
 
 # Import agents
 from agents.dqn_agent import DQNAgent
@@ -58,8 +59,8 @@ def parse_args():
         "--env_type",
         type=str,
         default="single",
-        choices=["single", "multi"],
-        help="Environment type: single intersection or multi-intersection",
+        choices=["single", "multi", "sumo"],
+        help="Environment type: single intersection, multi-intersection, or SUMO",
     )
     parser.add_argument(
         "--topology",
@@ -67,6 +68,12 @@ def parse_args():
         default="2x2_grid",
         choices=["2x2_grid", "corridor"],
         help="Network topology for multi-intersection environment",
+    )
+    parser.add_argument(
+        "--sumo_config",
+        type=str,
+        default="data/simulation/networks/single_intersection.sumocfg",
+        help="Path to SUMO configuration file (for SUMO environment)",
     )
     parser.add_argument(
         "--control_mode",
@@ -96,6 +103,12 @@ def parse_args():
         default="../logs",
         help="Directory containing trained models",
     )
+    parser.add_argument(
+        "--model_path",
+        type=str,
+        default=None,
+        help="Direct path to model file (overrides models_dir)",
+    )
 
     # Evaluation parameters
     parser.add_argument(
@@ -116,7 +129,7 @@ def parse_args():
     parser.add_argument(
         "--config_path",
         type=str,
-        default="../config/config.yaml",
+        default="config/config.yaml",
         help="Path to configuration file",
     )
 
@@ -147,6 +160,23 @@ def create_environment(args, config):
             env_config["demand_phases"] = scenario_config["phases"]
 
         env = IntersectionEnv(config=env_config)
+    elif args.env_type == "sumo":
+        # SUMO environment uses a different initialization
+        env_config = {
+            "max_time_steps": args.max_steps,
+            "reward_weights": {
+                "queue_length": -1.0,
+                "wait_time": -0.5,
+                "throughput": 1.0,
+                "switch_penalty": -2.0,
+            },
+        }
+
+        env = SUMOIntersectionEnv(
+            config_file=args.sumo_config,
+            render_mode="human" if args.render else None,
+            config=env_config,
+        )
     else:
         env_config = config["environments"]["multi"]
         env_config["topology"] = args.topology
@@ -181,7 +211,7 @@ def load_agent(method, env, args, config):
 
     # Path to model checkpoint
     if method in ["dqn", "a2c", "ppo", "qlearning"]:
-        model_path = os.path.join(
+        model_path = args.model_path or os.path.join(
             args.models_dir, f"{method}_{args.env_type}", "best_model.pt"
         )
 
@@ -283,7 +313,21 @@ def evaluate_agent(agent, env, args, config):
 
         while not (done or truncated):
             # Select action (without exploration)
-            action = agent.act(state, deterministic=True)
+            if hasattr(agent, "epsilon"):
+                # For DQN-style agents, temporarily set epsilon to 0
+                old_epsilon = agent.epsilon
+                agent.epsilon = 0.0
+                action = agent.act(state)
+                agent.epsilon = old_epsilon
+            elif (
+                hasattr(agent, "act")
+                and "deterministic" in agent.act.__code__.co_varnames
+            ):
+                # For policy gradient agents with deterministic parameter
+                action = agent.act(state, deterministic=True)
+            else:
+                # For other controllers
+                action = agent.act(state)
 
             # Count phase switches
             if prev_action is not None and action != prev_action and action == 1:
@@ -412,24 +456,26 @@ def save_results(results, args):
     with open(os.path.join(results_dir, "evaluation_config.json"), "w") as f:
         json.dump(vars(args), f, indent=4)
 
+    # Helper function to convert numpy types to native Python types
+    def convert_to_serializable(obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, dict):
+            return {k: convert_to_serializable(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert_to_serializable(item) for item in obj]
+        else:
+            return obj
+
+    # Convert results to serializable format
+    serializable_results = convert_to_serializable(results)
+
     # Save results as JSON
     with open(os.path.join(results_dir, "results.json"), "w") as f:
-        # Convert numpy arrays to lists for JSON serialization
-        serializable_results = {}
-        for method, metrics in results.items():
-            serializable_results[method] = {}
-            for metric, values in metrics.items():
-                if metric == "raw_data":
-                    serializable_results[method][metric] = {
-                        k: v.tolist() if isinstance(v, np.ndarray) else v
-                        for k, v in values.items()
-                    }
-                else:
-                    serializable_results[method][metric] = {
-                        k: v.item() if isinstance(v, np.ndarray) else v
-                        for k, v in values.items()
-                    }
-
         json.dump(serializable_results, f, indent=4)
 
     # Create summary CSV
@@ -438,8 +484,8 @@ def save_results(results, args):
         row = {"method": method}
         for metric, values in metrics.items():
             if metric != "raw_data":
-                row[f"{metric}_mean"] = values["mean"]
-                row[f"{metric}_std"] = values["std"]
+                row[f"{metric}_mean"] = float(values["mean"])
+                row[f"{metric}_std"] = float(values["std"])
         summary_data.append(row)
 
     summary_df = pd.DataFrame(summary_data)

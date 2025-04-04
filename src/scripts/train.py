@@ -27,6 +27,7 @@ sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 # Import environments
 from environments.intersection_env import IntersectionEnv
 from environments.traffic_env import TrafficMultiEnv
+from environments.sumo_env import SUMOIntersectionEnv
 
 # Import agent implementations (will be implemented later)
 from agents.dqn_agent import DQNAgent
@@ -58,8 +59,8 @@ def parse_args():
         "--env_type",
         type=str,
         default="single",
-        choices=["single", "multi"],
-        help="Environment type: single intersection or multi-intersection",
+        choices=["single", "multi", "sumo"],
+        help="Environment type: single intersection or multi-intersection or SUMO",
     )
     parser.add_argument(
         "--topology",
@@ -67,6 +68,12 @@ def parse_args():
         default="2x2_grid",
         choices=["2x2_grid", "corridor"],
         help="Network topology for multi-intersection environment",
+    )
+    parser.add_argument(
+        "--sumo_config",
+        type=str,
+        default="data/simulation/networks/single_intersection.sumocfg",
+        help="Path to SUMO configuration file (for SUMO environment)",
     )
     parser.add_argument(
         "--control_mode",
@@ -172,7 +179,7 @@ def create_environment(args):
             "random_seed": args.seed,
         }
         env = IntersectionEnv(config=env_config)
-    else:
+    elif args.env_type == "multi":
         env_config = {
             "topology": args.topology,
             "max_time_steps": args.max_steps,
@@ -187,6 +194,20 @@ def create_environment(args):
             "random_seed": args.seed,
         }
         env = TrafficMultiEnv(config=env_config)
+    elif args.env_type == "sumo":
+        env_config = {
+            "max_time_steps": args.max_steps,
+            "reward_weights": {
+                "queue_length": -1.0,
+                "wait_time": -0.5,
+                "throughput": 1.0,
+                "switch_penalty": -2.0,
+            },
+            "random_seed": args.seed,
+        }
+        env = SUMOIntersectionEnv(config_file=args.sumo_config, config=env_config)
+    else:
+        raise ValueError(f"Unsupported environment type: {args.env_type}")
 
     return env
 
@@ -198,7 +219,7 @@ def create_agent(args, env):
     if args.env_type == "single":
         state_dim = env.observation_space.shape[0]
         action_dim = env.action_space.n
-    else:
+    elif args.env_type == "multi":
         if args.control_mode == "centralized":
             state_dim = env.observation_space.shape[0]
             action_dim = env.action_space.shape[0]
@@ -207,6 +228,11 @@ def create_agent(args, env):
             first_id = list(env.intersections.keys())[0]
             state_dim = env.observation_spaces[first_id].shape[0]
             action_dim = env.action_spaces[first_id].n
+    elif args.env_type == "sumo":
+        state_dim = env.observation_space.shape[0]
+        action_dim = env.action_space.n
+    else:
+        raise ValueError(f"Unsupported environment type: {args.env_type}")
 
     # Create agent based on selected algorithm
     if args.algorithm == "dqn":
