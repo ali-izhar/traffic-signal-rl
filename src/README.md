@@ -1,6 +1,6 @@
-# Traffic Signal Reinforcement Learning
+# Traffic Signal Control
 
-This project implements a reinforcement learning approach to traffic signal control, as described in the paper "Adaptive Traffic Signal Control with Reinforcement Learning".
+Implementation of the paper "Adaptive Traffic Signal Control with Reinforcement Learning".
 
 ## Setup
 

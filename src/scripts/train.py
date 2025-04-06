@@ -39,11 +39,16 @@ from environments.intersection_env import IntersectionEnv
 from environments.traffic_env import TrafficMultiEnv
 from environments.sumo_env import SUMOIntersectionEnv
 
-# Import agent implementations (will be implemented later)
+# Import all agent implementations
 from agents.dqn_agent import DQNAgent
-
-# from agents.a2c_agent import A2CAgent
-# from agents.ppo_agent import PPOAgent
+from agents.a2c_agent import A2CAgent
+from agents.ppo_agent import PPOAgent
+from agents.qlearning_agent import QLearningAgent
+from agents.baseline_controllers import (
+    FixedTimingController,
+    ActuatedController,
+    WebsterController,
+)
 
 from utils.logger import Logger
 
@@ -59,8 +64,8 @@ def parse_args():
         "--algorithm",
         type=str,
         default="dqn",
-        choices=["qlearning", "dqn", "a2c", "ppo"],
-        help="RL algorithm to use",
+        choices=["a2c", "dqn", "ppo", "qlearning", "fixed", "actuated", "webster"],
+        help="RL algorithm or baseline controller to use",
     )
 
     # Environment settings
@@ -157,6 +162,29 @@ def parse_args():
     )
     parser.add_argument(
         "--seed", type=int, default=None, help="Random seed for reproducibility"
+    )
+
+    # Scenario selection
+    parser.add_argument(
+        "--scenario",
+        type=str,
+        default="normal",
+        choices=["normal", "unbalanced", "variable"],
+        help="Traffic scenario to use",
+    )
+
+    # Config file paths
+    parser.add_argument(
+        "--config_path",
+        type=str,
+        default="src/config/config.yaml",
+        help="Path to configuration file",
+    )
+    parser.add_argument(
+        "--hyperparams_path",
+        type=str,
+        default="src/config/hyperparameters.yaml",
+        help="Path to hyperparameters file",
     )
 
     return parser.parse_args()
@@ -260,14 +288,67 @@ def create_agent(args, env):
         }
         agent = DQNAgent(**agent_config)
     elif args.algorithm == "qlearning":
-        # Q-learning implementation will be added
-        raise NotImplementedError("Q-learning agent not implemented yet")
+        agent_config = {
+            "state_dim": state_dim,
+            "action_dim": action_dim,
+            "learning_rate": args.learning_rate,
+            "gamma": args.gamma,
+            "epsilon_start": args.epsilon_start,
+            "epsilon_end": args.epsilon_end,
+            "epsilon_decay": args.epsilon_decay,
+            "discretization": 5,  # Number of buckets for continuous state variables
+        }
+        agent = QLearningAgent(**agent_config)
     elif args.algorithm == "a2c":
-        # A2C implementation will be added
-        raise NotImplementedError("A2C agent not implemented yet")
+        agent_config = {
+            "state_dim": state_dim,
+            "action_dim": action_dim,
+            "hidden_size": args.hidden_size,
+            "actor_lr": args.learning_rate,
+            "critic_lr": args.learning_rate,
+            "gamma": args.gamma,
+            "entropy_coef": 0.01,
+        }
+        agent = A2CAgent(**agent_config)
     elif args.algorithm == "ppo":
-        # PPO implementation will be added
-        raise NotImplementedError("PPO agent not implemented yet")
+        agent_config = {
+            "state_dim": state_dim,
+            "action_dim": action_dim,
+            "hidden_size": args.hidden_size,
+            "learning_rate": args.learning_rate,
+            "gamma": args.gamma,
+            "clip_ratio": 0.2,
+            "value_coef": 0.5,
+            "entropy_coef": 0.01,
+            "gae_lambda": 0.95,
+            "batch_size": args.batch_size,
+        }
+        agent = PPOAgent(**agent_config)
+    elif args.algorithm == "fixed":
+        agent_config = {
+            "cycle_length": 60,
+            "green_splits": [0.5, 0.5],  # Equal time for N-S and E-W
+            "yellow_time": 3,
+            "min_phase_time": 5,
+        }
+        agent = FixedTimingController(**agent_config)
+    elif args.algorithm == "actuated":
+        agent_config = {
+            "min_green": 5,
+            "max_green": 30,
+            "extension_time": 2,
+            "gap_threshold": 2,
+            "yellow_time": 3,
+        }
+        agent = ActuatedController(**agent_config)
+    elif args.algorithm == "webster":
+        agent_config = {
+            "saturation_flow": 1800,
+            "lost_time_per_phase": 2,
+            "min_cycle": 30,
+            "max_cycle": 120,
+        }
+        agent = WebsterController(**agent_config)
     else:
         raise ValueError(f"Unsupported algorithm: {args.algorithm}")
 
@@ -277,7 +358,7 @@ def create_agent(args, env):
 def setup_logging(args):
     """Set up directories and logging for the training run."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_name = f"{args.algorithm}_{args.env_type}_{timestamp}"
+    run_name = f"{args.algorithm}_{args.env_type}_{args.scenario}_{timestamp}"
 
     log_dir = os.path.join(args.save_dir, run_name)
     os.makedirs(log_dir, exist_ok=True)
@@ -293,7 +374,8 @@ def setup_logging(args):
 
 
 def evaluate(agent, env, num_episodes=5):
-    """Evaluate agent performance without exploration.
+    """
+    Evaluate agent performance without exploration.
 
     Args:
         agent: The agent to evaluate
@@ -317,9 +399,10 @@ def evaluate(agent, env, num_episodes=5):
         done = False
         truncated = False
 
-        # Disable exploration
-        old_epsilon = agent.epsilon
-        agent.epsilon = 0.0
+        # Disable exploration for RL agents
+        if hasattr(agent, "epsilon"):
+            old_epsilon = agent.epsilon
+            agent.epsilon = 0.0
 
         while not (done or truncated):
             # Select action without exploration
@@ -339,13 +422,14 @@ def evaluate(agent, env, num_episodes=5):
             # Update state
             state = next_state
 
-        # Restore exploration rate
-        agent.epsilon = old_epsilon
+        # Restore exploration rate for RL agents
+        if hasattr(agent, "epsilon"):
+            agent.epsilon = old_epsilon
 
         # Store episode metrics
         rewards.append(episode_reward)
         throughputs.append(episode_throughput)
-        queue_lengths.append(episode_queue_sum / step_count)
+        queue_lengths.append(episode_queue_sum / step_count if step_count > 0 else 0)
 
     # Calculate averages
     avg_reward = sum(rewards) / num_episodes
@@ -380,7 +464,30 @@ def train(args):
     episode_throughputs = []
     episode_queue_lengths = []
 
-    # Training loop
+    # For baseline (non-learning) controllers, we only need to evaluate them
+    if args.algorithm in ["fixed", "actuated", "webster"]:
+        print(f"Evaluating baseline controller: {args.algorithm}")
+        eval_metrics = evaluate(agent, env, num_episodes=args.episodes)
+
+        print(
+            f"Evaluation metrics: Reward={eval_metrics['reward']:.2f}, "
+            f"Throughput={eval_metrics['throughput']:.2f}, "
+            f"Avg Queue Length={eval_metrics['queue_length']:.2f}"
+        )
+
+        # Log metrics
+        logger.log_metrics(
+            {
+                "eval_reward": eval_metrics["reward"],
+                "eval_throughput": eval_metrics["throughput"],
+                "eval_queue_length": eval_metrics["queue_length"],
+            },
+            step=0,
+        )
+
+        return agent, log_dir
+
+    # Training loop for RL agents
     print(f"Starting training with {args.algorithm} for {args.episodes} episodes...")
     progress_bar = tqdm(range(args.episodes), desc="Training")
 
@@ -440,7 +547,7 @@ def train(args):
                 "episode_reward": episode_reward,
                 "episode_throughput": episode_throughput,
                 "episode_queue_length": avg_queue_length,
-                "epsilon": agent.epsilon,
+                "epsilon": agent.epsilon if hasattr(agent, "epsilon") else 0,
             },
             step=episode,
         )
@@ -462,14 +569,18 @@ def train(args):
             # Update best model if current is better
             if eval_metrics["reward"] > best_reward:
                 best_reward = eval_metrics["reward"]
-                agent.save(os.path.join(log_dir, "best_model.pt"))
-                print(
-                    f"Episode {episode+1}: New best model saved with reward {best_reward:.2f}"
-                )
+                # Save model if it has a save method
+                if hasattr(agent, "save"):
+                    agent.save(os.path.join(log_dir, "best_model.pt"))
+                    print(
+                        f"Episode {episode+1}: New best model saved with reward {best_reward:.2f}"
+                    )
 
         # Periodic saving
         if (episode + 1) % args.save_interval == 0:
-            agent.save(os.path.join(log_dir, f"model_ep{episode+1}.pt"))
+            # Save model if it has a save method
+            if hasattr(agent, "save"):
+                agent.save(os.path.join(log_dir, f"model_ep{episode+1}.pt"))
 
             # Save training curves
             plt.figure(figsize=(15, 5))
@@ -500,7 +611,8 @@ def train(args):
             plt.close()
 
     # Save final model
-    agent.save(os.path.join(log_dir, "final_model.pt"))
+    if hasattr(agent, "save"):
+        agent.save(os.path.join(log_dir, "final_model.pt"))
 
     # Final evaluation
     final_metrics = evaluate(agent, env, num_episodes=10)
