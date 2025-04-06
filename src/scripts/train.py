@@ -1,25 +1,35 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-Training Script for Traffic Signal Control
+"""Training Script for Traffic Signal Control
 
-This script trains reinforcement learning agents on the traffic signal control
-environments. It supports different algorithms and environment configurations.
+This script trains RL agents on the traffic signal control environments.
+
+Environment Selection Guide:
+- IntersectionEnv (--env_type single): Best for rapid prototyping, algorithm
+  development, and hyperparameter tuning. Use for initial experiments.
+
+- SUMOIntersectionEnv (--env_type sumo): Recommended for final results and
+  publication-quality experiments. Provides the most realistic traffic
+  simulation but requires SUMO to be installed.
+
+- TrafficMultiEnv (--env_type multi): Use for experiments involving multiple
+  intersections and coordination strategies. Supports both centralized and
+  decentralized control modes.
 """
+
+from datetime import datetime
+from tqdm import tqdm
 
 import os
 import sys
 import argparse
+import random
+import json
+
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
-import time
-from datetime import datetime
-import random
-import json
-from tqdm import tqdm
-import gymnasium as gym
 
 # Add src directory to path
 sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
@@ -35,7 +45,6 @@ from agents.dqn_agent import DQNAgent
 # from agents.a2c_agent import A2CAgent
 # from agents.ppo_agent import PPOAgent
 
-# Import utilities
 from utils.logger import Logger
 
 
@@ -284,8 +293,7 @@ def setup_logging(args):
 
 
 def evaluate(agent, env, num_episodes=5):
-    """
-    Evaluate agent performance without exploration.
+    """Evaluate agent performance without exploration.
 
     Args:
         agent: The agent to evaluate

@@ -1,27 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-Evaluation Script for Traffic Signal Control
+"""Evaluation Script for Traffic Signal Control"""
 
-This script evaluates the performance of different traffic signal control methods
-across various scenarios as described in the paper. It supports both single and
-multi-intersection environments, and can compare RL agents against baselines.
-"""
+from datetime import datetime
+from tqdm import tqdm
 
 import os
 import sys
 import argparse
+import yaml
+import json
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import torch
-import time
-import yaml
-import json
-from datetime import datetime
-from tqdm import tqdm
-import gymnasium as gym
 
 # Add src directory to path
 sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
@@ -41,11 +35,6 @@ from agents.baseline_controllers import (
     ActuatedController,
     WebsterController,
 )
-
-# Import utilities
-from utils.metrics import calculate_metrics
-from utils.visualization import plot_comparison, plot_traffic_state
-from utils.data_manager import DataManager
 
 
 def parse_args():
@@ -272,8 +261,7 @@ def load_agent(method, env, args, config):
 
 
 def evaluate_agent(agent, env, args, config):
-    """
-    Evaluate an agent on the environment.
+    """Evaluate an agent on the environment.
 
     Args:
         agent: The agent to evaluate

@@ -1,8 +1,4 @@
-"""
-Utility Functions and Classes
-
-This package contains utility functions and classes for the traffic signal control system.
-"""
+"""Utility Functions and Classes"""
 
 from .logger import Logger
 

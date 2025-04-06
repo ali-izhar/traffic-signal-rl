@@ -1,20 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-Test script for SUMO Environment
+"""Test script for SUMO Environment"""
 
-This script tests the SUMO-based environment by running a simple
-random agent and collecting statistics.
-"""
+from pathlib import Path
 
-import os
+import argparse
 import sys
+import random
 import numpy as np
 import matplotlib.pyplot as plt
-import argparse
-from pathlib import Path
-import random
+
 
 # Ensure the src directory is in the Python path
 script_dir = Path(__file__).resolve().parent
@@ -26,8 +22,7 @@ from agents.baseline_controllers import FixedTimingController
 
 
 def run_random_agent(config_file, episodes=3, steps_per_episode=1000, render_mode=None):
-    """
-    Run a random agent in the SUMO environment and collect statistics.
+    """Run a random agent in the SUMO environment and collect statistics.
 
     Args:
         config_file: Path to SUMO configuration file
@@ -119,8 +114,7 @@ def run_random_agent(config_file, episodes=3, steps_per_episode=1000, render_mod
 def run_fixed_time_controller(
     config_file, episodes=3, steps_per_episode=1000, render_mode=None
 ):
-    """
-    Run a fixed-time controller in the SUMO environment and collect statistics.
+    """Run a fixed-time controller in the SUMO environment and collect statistics.
 
     Args:
         config_file: Path to SUMO configuration file
@@ -209,8 +203,7 @@ def run_fixed_time_controller(
 
 
 def plot_comparison(random_stats, fixed_stats):
-    """
-    Plot a comparison of performance between random and fixed-time controllers.
+    """Plot a comparison of performance between random and fixed-time controllers.
 
     Args:
         random_stats: Statistics from random agent

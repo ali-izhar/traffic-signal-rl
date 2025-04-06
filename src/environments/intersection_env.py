@@ -10,6 +10,21 @@ Reinforcement Learning".
 
 The environment follows the Gymnasium interface and can be used with various RL
 algorithms including Q-learning, DQN, and A2C.
+
+Key features:
+- Lightweight simulation without external dependencies
+- Fast execution for rapid prototyping and development
+- Simplified but representative traffic dynamics
+- Configurable arrival rates and traffic patterns
+
+Recommended use:
+- Initial algorithm development and testing
+- Hyperparameter tuning
+- Rapid iteration of RL approaches
+- Educational purposes and baseline experiments
+
+For final/publication results, consider using SUMOIntersectionEnv for more
+realistic traffic simulation.
 """
 
 import gymnasium as gym

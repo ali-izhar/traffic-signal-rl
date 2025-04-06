@@ -1,5 +1,9 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""Generates traffic data for the SUMO simulation."""
+
 import os
-import numpy as np
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 

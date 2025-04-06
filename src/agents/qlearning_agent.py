@@ -1,23 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-Tabular Q-Learning Agent
-
-This module implements a basic tabular Q-learning agent for traffic signal control,
-providing a baseline for comparison with deep RL methods.
-"""
+"""Tabular Q-Learning Agent"""
 
 import os
 import numpy as np
 import pickle
-from typing import Tuple, Dict, List, Any, Union
+from typing import Tuple, Dict, List, Union
 
 
 class QLearningAgent:
-    """
-    Tabular Q-learning agent for traffic signal control.
-
+    """Tabular Q-learning agent for traffic signal control.
     This agent discretizes the continuous state space and uses a table to store
     Q-values for state-action pairs.
     """
@@ -34,8 +27,7 @@ class QLearningAgent:
         discretization_levels: Union[int, List[int]] = 5,
         checkpoint_dir: str = "checkpoints",
     ):
-        """
-        Initialize the Q-learning agent.
+        """Initialize the Q-learning agent.
 
         Args:
             state_dim: Dimension of state space
@@ -149,8 +141,7 @@ class QLearningAgent:
         self.episode_count = 0
 
     def discretize_state(self, state: np.ndarray) -> Tuple:
-        """
-        Discretize a continuous state into a discrete state usable as Q-table key.
+        """Discretize a continuous state into a discrete state usable as Q-table key.
 
         Args:
             state: Continuous state vector
@@ -183,8 +174,7 @@ class QLearningAgent:
         return tuple(discrete_state)
 
     def act(self, state: np.ndarray) -> int:
-        """
-        Select action using epsilon-greedy policy.
+        """Select action using epsilon-greedy policy.
 
         Args:
             state: Current state
@@ -216,8 +206,7 @@ class QLearningAgent:
         next_state: np.ndarray,
         done: bool,
     ) -> Dict[str, float]:
-        """
-        Update Q-value based on observed transition.
+        """Update Q-value based on observed transition.
 
         Args:
             state: Current state
@@ -274,8 +263,7 @@ class QLearningAgent:
         }
 
     def save(self, filepath: str) -> None:
-        """
-        Save Q-table and agent parameters.
+        """Save Q-table and agent parameters.
 
         Args:
             filepath: Path to save agent state
@@ -300,8 +288,7 @@ class QLearningAgent:
         print(f"Agent saved to {filepath}")
 
     def load(self, filepath: str) -> None:
-        """
-        Load Q-table and agent parameters.
+        """Load Q-table and agent parameters.
 
         Args:
             filepath: Path to load agent state from

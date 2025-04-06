@@ -1,17 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-Proximal Policy Optimization (PPO) Agent
-
-This module implements the PPO algorithm for traffic signal control.
-The implementation includes:
-- Clipped objective function for stable policy updates
-- Shared feature extraction network
-- Separate policy (actor) and value (critic) networks
-- Early stopping based on KL divergence
-- Generalized Advantage Estimation (GAE)
-"""
+"""Proximal Policy Optimization (PPO) Agent"""
 
 import os
 import numpy as np
@@ -23,9 +13,7 @@ from torch.distributions import Categorical
 
 
 class SharedNetwork(nn.Module):
-    """
-    Shared feature extraction layers for both actor and critic
-    """
+    """Shared feature extraction layers for both actor and critic"""
 
     def __init__(self, state_dim, hidden_sizes=[256, 128]):
         super(SharedNetwork, self).__init__()
@@ -52,9 +40,7 @@ class SharedNetwork(nn.Module):
 
 
 class ActorNetwork(nn.Module):
-    """
-    Policy network (Actor) for discrete action spaces
-    """
+    """Policy network (Actor) for discrete action spaces"""
 
     def __init__(self, feature_dim, action_dim, hidden_size=64):
         super(ActorNetwork, self).__init__()
@@ -104,9 +90,7 @@ class ActorNetwork(nn.Module):
 
 
 class CriticNetwork(nn.Module):
-    """
-    Value network (Critic)
-    """
+    """Value network (Critic)"""
 
     def __init__(self, feature_dim, hidden_size=64):
         super(CriticNetwork, self).__init__()
@@ -127,9 +111,7 @@ class CriticNetwork(nn.Module):
 
 
 class PPOAgent:
-    """
-    Proximal Policy Optimization agent implementation
-    """
+    """Proximal Policy Optimization agent implementation"""
 
     def __init__(
         self,

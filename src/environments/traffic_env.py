@@ -9,7 +9,24 @@ control, as described in the paper "Adaptive Traffic Signal Control with
 Reinforcement Learning". It supports coordinated control of multiple
 intersections in a traffic network.
 
-The environment can be used with centralized or decentralized RL approaches.
+Key features:
+- Support for multiple connected intersections in different network topologies
+- Flexible control modes: centralized (one agent controls all intersections) or
+  decentralized (separate agent per intersection)
+- Road network simulation with queue dynamics and traffic flow modeling
+- Customizable network topologies (grid, corridor, etc.)
+- Visualization capabilities for network state and traffic flow
+
+Recommended use:
+- Research on traffic signal coordination strategies
+- Studying the impact of different control architectures (centralized vs. decentralized)
+- Scaling experiments from single to multiple intersections
+- Testing transfer learning between different network configurations
+- Evaluating multi-agent reinforcement learning approaches
+
+This environment offers a balance between the simplified IntersectionEnv and the
+highly detailed SUMOIntersectionEnv, providing multi-intersection capabilities
+without external dependencies.
 """
 
 import gymnasium as gym

@@ -1,20 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-Advantage Actor-Critic (A2C) Agent
-
-This module implements the A2C algorithm for traffic signal control.
-The implementation includes:
-- Separate policy (actor) and value (critic) networks
-- Shared feature extraction layers
-- Advantage function estimation
-- Entropy regularization
-- Value function learning
-"""
+"""Advantage Actor-Critic (A2C) Agent"""
 
 import os
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -23,9 +12,7 @@ from torch.distributions import Categorical
 
 
 class SharedNetwork(nn.Module):
-    """
-    Shared feature extraction layers for both actor and critic
-    """
+    """Shared feature extraction layers for both actor and critic"""
 
     def __init__(self, state_dim, hidden_sizes=[256, 128]):
         super(SharedNetwork, self).__init__()
@@ -52,9 +39,7 @@ class SharedNetwork(nn.Module):
 
 
 class ActorNetwork(nn.Module):
-    """
-    Policy network (Actor) for discrete action spaces
-    """
+    """Policy network (Actor) for discrete action spaces"""
 
     def __init__(self, feature_dim, action_dim, hidden_size=64):
         super(ActorNetwork, self).__init__()
@@ -93,9 +78,7 @@ class ActorNetwork(nn.Module):
 
 
 class CriticNetwork(nn.Module):
-    """
-    Value network (Critic)
-    """
+    """Value network (Critic)"""
 
     def __init__(self, feature_dim, hidden_size=64):
         super(CriticNetwork, self).__init__()
@@ -116,9 +99,7 @@ class CriticNetwork(nn.Module):
 
 
 class A2CAgent:
-    """
-    Advantage Actor-Critic agent with entropy regularization
-    """
+    """Advantage Actor-Critic agent with entropy regularization"""
 
     def __init__(
         self,

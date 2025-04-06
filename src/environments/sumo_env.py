@@ -6,6 +6,24 @@ SUMO Traffic Signal Control Environment
 
 This module implements a Gymnasium environment for traffic signal control
 that interfaces with the SUMO traffic simulator.
+
+Key features:
+- High-fidelity traffic simulation using SUMO (Simulation of Urban MObility)
+- Realistic vehicle dynamics, including acceleration, braking, and lane-changing
+- Detailed intersection geometry and traffic light phasing
+- Support for real-world road networks and traffic patterns
+- Collection of comprehensive traffic metrics (queue lengths, waiting times, emissions)
+
+Recommended use:
+- Final experiments for publication results
+- Realistic validation of RL algorithms
+- Experiments requiring detailed vehicle-level dynamics
+- Studies involving complex traffic patterns and intersection geometries
+- Transfer learning between simulation and real-world applications
+
+This environment provides the most realistic simulation of the three environments
+but requires SUMO to be installed and has slower execution speed compared to
+the simplified IntersectionEnv.
 """
 
 import os

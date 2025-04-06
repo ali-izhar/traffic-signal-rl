@@ -1,20 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-Baseline Traffic Signal Controllers
-
-This module implements traditional traffic signal control methods (fixed-timing and
-actuated) that serve as baselines for comparison with RL approaches.
-"""
+"""Baseline Traffic Signal Controllers (fixed-timing, actuated, Webster)"""
 
 import numpy as np
-from typing import Dict, Union, List, Any, Tuple
+from typing import List
 
 
 class FixedTimingController:
-    """
-    Fixed-timing traffic signal controller.
+    """Fixed-timing traffic signal controller.
 
     This controller operates on a pre-defined cycle with fixed green times for each phase.
     It represents the simplest form of traffic signal control commonly used in practice.
@@ -27,8 +21,7 @@ class FixedTimingController:
         yellow_time: int = 2,
         min_phase_time: int = 5,
     ):
-        """
-        Initialize fixed-timing controller.
+        """Initialize fixed-timing controller.
 
         Args:
             cycle_length: Total cycle length in time steps
@@ -75,8 +68,7 @@ class FixedTimingController:
         self.in_yellow = False
 
     def act(self, state: np.ndarray) -> int:
-        """
-        Determine action based on fixed timing.
+        """Determine action based on fixed timing.
 
         Args:
             state: Current state (ignored in fixed-timing)
@@ -110,10 +102,8 @@ class FixedTimingController:
         return 0
 
     def learn(self, state, action, reward, next_state, done):
-        """
-        Placeholder for compatibility with RL agents.
-        Fixed-timing controller doesn't learn.
-        """
+        """Placeholder for compatibility with RL agents.
+        Fixed-timing controller doesn't learn."""
         return {"td_error": 0.0}
 
     def save(self, filepath):
@@ -126,8 +116,7 @@ class FixedTimingController:
 
 
 class ActuatedController:
-    """
-    Vehicle-actuated traffic signal controller.
+    """Vehicle-actuated traffic signal controller.
 
     This controller extends green phases when vehicles are detected and
     terminates them when no vehicles are detected for a certain period,
@@ -142,8 +131,7 @@ class ActuatedController:
         extension_time: int = 2,
         gap_threshold: int = 2,
     ):
-        """
-        Initialize actuated controller.
+        """Initialize actuated controller.
 
         Args:
             min_green: Minimum green time for any phase in time steps
@@ -166,8 +154,7 @@ class ActuatedController:
         self.yellow_active = False
 
     def act(self, state: np.ndarray) -> int:
-        """
-        Determine action based on vehicle detection.
+        """Determine action based on vehicle detection.
 
         Args:
             state: Current state including queue lengths
@@ -246,10 +233,8 @@ class ActuatedController:
                 return 0  # No vehicles anywhere, maintain green
 
     def learn(self, state, action, reward, next_state, done):
-        """
-        Placeholder for compatibility with RL agents.
-        Actuated controller doesn't learn.
-        """
+        """Placeholder for compatibility with RL agents.
+        Actuated controller doesn't learn."""
         return {"td_error": 0.0}
 
     def save(self, filepath):
@@ -262,8 +247,7 @@ class ActuatedController:
 
 
 class WebsterController:
-    """
-    Webster's traffic signal controller.
+    """Webster's traffic signal controller.
 
     This controller calculates optimal cycle length and green splits based on
     traffic flow measured by the Webster formula, widely used in traffic engineering.
@@ -278,8 +262,7 @@ class WebsterController:
         min_cycle: int = 30,
         max_cycle: int = 120,
     ):
-        """
-        Initialize Webster controller.
+        """Initialize Webster controller.
 
         Args:
             yellow_time: Duration of yellow phase in time steps
@@ -362,8 +345,7 @@ class WebsterController:
         ]
 
     def act(self, state: np.ndarray) -> int:
-        """
-        Determine action based on Webster's method and traffic data.
+        """Determine action based on Webster's method and traffic data.
 
         Args:
             state: Current state including queue lengths
@@ -416,10 +398,8 @@ class WebsterController:
         return 0
 
     def learn(self, state, action, reward, next_state, done):
-        """
-        Placeholder for compatibility with RL agents.
-        Webster controller uses its own update mechanism.
-        """
+        """Placeholder for compatibility with RL agents.
+        Webster controller uses its own update mechanism."""
         return {"td_error": 0.0}
 
     def save(self, filepath):

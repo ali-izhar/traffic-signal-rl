@@ -1,8 +1,4 @@
-"""
-Traffic Signal Control Environments
-
-This package contains environment implementations for traffic signal control.
-"""
+"""Traffic Signal Control Environments"""
 
 from .intersection_env import IntersectionEnv
 from .traffic_env import TrafficMultiEnv, TrafficNetwork, Intersection

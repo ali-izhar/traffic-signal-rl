@@ -1,34 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-Deep Q-Network Agent
+"""Deep Q-Network (DQN) Agent"""
 
-This module implements the Deep Q-Network (DQN) agent with several enhancements
-for traffic signal control, as described in the paper.
-"""
+from collections import deque
+from typing import Tuple, List
 
 import os
 import numpy as np
 import random
-from collections import deque
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from typing import Tuple, List, Dict, Any, Union
 
 
 class ReplayBuffer:
-    """
-    Experience replay buffer with prioritized sampling capability.
-
-    Stores transitions that the agent observes for later reuse during training.
-    """
+    """Experience replay buffer with prioritized sampling capability.
+    Stores transitions that the agent observes for later reuse during training."""
 
     def __init__(self, capacity: int, alpha: float = 0.6):
-        """
-        Initialize the replay buffer.
+        """Initialize the replay buffer.
 
         Args:
             capacity: Maximum size of the buffer
@@ -42,8 +35,7 @@ class ReplayBuffer:
         self.size = 0
 
     def add(self, state, action, reward, next_state, done):
-        """
-        Add a new experience to the buffer.
+        """Add a new experience to the buffer.
 
         Args:
             state: Current state
@@ -73,8 +65,7 @@ class ReplayBuffer:
     def sample(
         self, batch_size: int, beta: float = 0.4
     ) -> Tuple[List, np.ndarray, np.ndarray]:
-        """
-        Sample a batch of experiences with prioritized sampling.
+        """Sample a batch of experiences with prioritized sampling.
 
         Args:
             batch_size: Number of experiences to sample
@@ -104,8 +95,7 @@ class ReplayBuffer:
         return batch, indices, weights
 
     def update_priorities(self, indices: np.ndarray, priorities: np.ndarray):
-        """
-        Update priorities for sampled transitions.
+        """Update priorities for sampled transitions.
 
         Args:
             indices: Indices of the transitions
@@ -119,15 +109,11 @@ class ReplayBuffer:
 
 
 class DQNNetwork(nn.Module):
-    """
-    Deep Q-Network for traffic signal control.
-
-    This network maps states to Q-values for each action.
-    """
+    """Deep Q-Network for traffic signal control.
+    This network maps states to Q-values for each action."""
 
     def __init__(self, state_dim: int, action_dim: int, hidden_size: int = 256):
-        """
-        Initialize the Q-network.
+        """Initialize the Q-network.
 
         Args:
             state_dim: Dimension of state space
@@ -162,8 +148,7 @@ class DQNNetwork(nn.Module):
                     nn.init.zeros_(m.bias)
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
-        """
-        Forward pass through the network.
+        """Forward pass through the network.
 
         Args:
             state: State tensor
@@ -175,15 +160,7 @@ class DQNNetwork(nn.Module):
 
 
 class DQNAgent:
-    """
-    Deep Q-Network agent for traffic signal control.
-
-    Implements DQN with several enhancements:
-    - Experience replay with prioritization
-    - Target network for stable learning
-    - Double DQN to reduce overestimation
-    - N-step returns for better credit assignment
-    """
+    """Deep Q-Network agent for traffic signal control."""
 
     def __init__(
         self,
@@ -206,8 +183,7 @@ class DQNAgent:
         priority_beta_steps: int = 100000,
         device: str = None,
     ):
-        """
-        Initialize the DQN agent.
+        """Initialize the DQN agent.
 
         Args:
             state_dim: Dimension of state space
@@ -283,8 +259,7 @@ class DQNAgent:
         self.update_count = 0
 
     def act(self, state: np.ndarray) -> int:
-        """
-        Select action using epsilon-greedy policy.
+        """Select action using epsilon-greedy policy.
 
         Args:
             state: Current state
@@ -311,8 +286,7 @@ class DQNAgent:
         next_state: np.ndarray,
         done: bool,
     ):
-        """
-        Store experience and perform learning update.
+        """Store experience and perform learning update.
 
         Args:
             state: Current state
@@ -449,8 +423,7 @@ class DQNAgent:
         self.train_step += 1
 
     def save(self, filepath: str):
-        """
-        Save the agent's model and parameters.
+        """Save the agent's model and parameters.
 
         Args:
             filepath: Path to save the model
@@ -473,8 +446,7 @@ class DQNAgent:
         print(f"Model saved to {filepath}")
 
     def load(self, filepath: str):
-        """
-        Load the agent's model and parameters.
+        """Load the agent's model and parameters.
 
         Args:
             filepath: Path to load the model from
