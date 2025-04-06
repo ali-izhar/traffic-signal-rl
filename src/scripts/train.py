@@ -16,6 +16,20 @@ Environment Selection Guide:
 - TrafficMultiEnv (--env_type multi): Use for experiments involving multiple
   intersections and coordination strategies. Supports both centralized and
   decentralized control modes.
+
+USAGE:
+------
+# Train a DQN agent
+python src/scripts/train.py --algorithm dqn --env_type single --scenario normal
+
+# Train a PPO agent
+python src/scripts/train.py --algorithm ppo --env_type single --scenario variable
+
+# Evaluate a baseline controller
+python src/scripts/train.py --algorithm fixed --env_type single --scenario unbalanced
+
+# Use the SUMO environment for more realistic simulation
+python src/scripts/train.py --algorithm a2c --env_type sumo --sumo_config data/simulation/networks/single_intersection.sumocfg
 """
 
 from datetime import datetime
