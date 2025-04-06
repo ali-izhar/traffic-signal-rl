@@ -3,31 +3,31 @@
 
 # Environment configurations
 environments:
-  # Single intersection configuration
+  # Single intersection configuration - used with IntersectionEnv
   single:
-    max_time_steps: 1000
+    max_time_steps: 1000       # Maximum steps per episode before truncation
     arrival_rates:
-      north: 0.2
-      south: 0.2
-      east: 0.3
+      north: 0.2               # Probability of vehicle arrival from north per step
+      south: 0.2               # Probability of vehicle arrival from south per step
+      east: 0.3                # Higher east-west traffic demand
       west: 0.3
-    reward_weights:
-      queue_length: -1.0
-      wait_time: -0.5
-      throughput: 1.0
-      switch_penalty: -2.0
-    yellow_time: 2
-    min_green_time: 5
+    reward_weights:            # Components of the multi-objective reward function
+      queue_length: -1.0       # Penalty per vehicle in queue
+      wait_time: -0.5          # Penalty per second of waiting time
+      throughput: 1.0          # Reward per vehicle that exits the intersection
+      switch_penalty: -2.0     # Penalty for changing signal phase (prevents oscillation)
+    yellow_time: 2             # Duration of yellow phase in seconds
+    min_green_time: 5          # Minimum green phase duration before allowing phase change
     
-  # Multi-intersection configurations
+  # Multi-intersection configurations - used with TrafficMultiEnv
   multi:
     max_time_steps: 1000
-    topology: "2x2_grid"
-    control_mode: "decentralized"
+    topology: "2x2_grid"       # Network layout: 2×2 grid with 4 intersections
+    control_mode: "decentralized"  # Each intersection controlled by separate agent
     arrival_rates:
-      default: 0.2
-      peak: 0.4
-    reward_weights:
+      default: 0.2             # Base arrival rate
+      peak: 0.4                # Higher arrival rate during peak periods
+    reward_weights:            # Same reward structure as single intersection
       queue_length: -1.0
       wait_time: -0.5
       throughput: 1.0
@@ -35,17 +35,18 @@ environments:
     yellow_time: 2
     min_green_time: 5
 
+  # SUMO-based environment - used with SUMOIntersectionEnv
   sumo:
-    max_time_steps: 1000
-    reward_weights:
+    max_time_steps: 1000       # Maximum simulation steps
+    reward_weights:            # Reward components (vehicle dynamics handled by SUMO)
       queue_length: -1.0
       wait_time: -0.5
       throughput: 1.0
       switch_penalty: -2.0
 
-# Experimental scenarios
+# Experimental scenarios - different traffic demand patterns for evaluation
 scenarios:
-  # Scenario 1: Normal traffic
+  # Scenario 1: Normal traffic - balanced flow in all directions
   normal:
     description: "Uniform traffic demand across all approaches"
     arrival_pattern: "uniform"
@@ -55,85 +56,85 @@ scenarios:
       east: 0.3
       west: 0.3
     
-  # Scenario 2: Unbalanced traffic
+  # Scenario 2: Unbalanced traffic - tests adaptability to skewed demand
   unbalanced:
     description: "High E-W traffic, low N-S traffic"
     arrival_pattern: "unbalanced"
     arrival_rates:
-      north: 0.4
+      north: 0.4               # Higher north-south traffic
       south: 0.4
-      east: 0.1
+      east: 0.1                # Lower east-west traffic
       west: 0.1
       
-  # Scenario 3: Variable demand
+  # Scenario 3: Variable demand - time-varying patterns for realistic simulation
   variable:
     description: "Time-varying traffic patterns simulating peak hours"
     arrival_pattern: "variable"
     phases:
-      - name: "morning_peak"
-        duration: 1200
+      - name: "morning_peak"   # Morning rush hour (first 20 minutes)
+        duration: 1200         # Duration in seconds
         arrival_rates:
-          north: 0.4
+          north: 0.4           # Heavy northbound (going to work)
           south: 0.1
           east: 0.3
           west: 0.2
-      - name: "mid_day"
+      - name: "mid_day"        # Mid-day normal traffic (next 20 minutes)
         duration: 1200
         arrival_rates:
-          north: 0.2
+          north: 0.2           # Balanced traffic
           south: 0.2
           east: 0.2
           west: 0.2
-      - name: "evening_peak"
+      - name: "evening_peak"   # Evening rush hour (final 20 minutes)
         duration: 1200
         arrival_rates:
           north: 0.1
-          south: 0.4
+          south: 0.4           # Heavy southbound (returning from work)
           east: 0.2
           west: 0.3
 
-# Evaluation metrics
+# Evaluation metrics - performance indicators used to assess controllers
 evaluation:
   metrics:
-    - average_waiting_time
-    - average_queue_length
-    - throughput
-    - co2_emissions
-    - travel_time
-  num_episodes: 10
-  render: false
-  log_metrics_interval: 10
+    - average_waiting_time     # Average time vehicles wait at intersection
+    - average_queue_length     # Average number of vehicles queued
+    - throughput               # Total vehicles processed
+    - co2_emissions            # Environmental impact metric
+    - travel_time              # Average time to cross the intersection
+  num_episodes: 10             # Number of episodes for evaluation
+  render: false                # Whether to visualize during evaluation
+  log_metrics_interval: 10     # Log metrics every N episodes
   
-# Logging and output
+# Logging and output - for tracking experiments and saving results
 logging:
-  log_dir: "../logs"
-  save_models: true
-  save_interval: 50
-  tensorboard: true
-  plot_metrics: true
-  record_video: false
-  video_interval: 100
+  log_dir: "../logs"           # Directory to save logs
+  save_models: true            # Whether to save trained models
+  save_interval: 50            # Save model every N episodes
+  tensorboard: true            # Use TensorBoard for visualization
+  plot_metrics: true           # Generate performance plots
+  record_video: false          # Record videos of agent performance
+  video_interval: 100          # Record video every N episodes
 
-# Comparison methods
+# Comparison methods - baseline controllers for benchmarking RL approaches
 baselines:
-  - name: "fixed"
+  - name: "fixed"              # Fixed-time controller (Webster's method)
     parameters:
-      cycle_length: 60
-      green_splits: [0.5, 0.5]
-      yellow_time: 3
-      min_phase_time: 5
+      cycle_length: 60         # Complete cycle time in seconds
+      green_splits: [0.5, 0.5] # Equal time allocation to N-S and E-W
+      yellow_time: 3           # Yellow signal duration
+      min_phase_time: 5        # Minimum phase duration
   
-  - name: "actuated"
+  - name: "actuated"           # Vehicle-actuated controller
     parameters:
-      min_green: 5
-      max_green: 30
-      extension_time: 2
-      gap_threshold: 2
+      min_green: 5             # Minimum green time
+      max_green: 30            # Maximum green extension
+      extension_time: 2        # Time added when vehicle detected
+      gap_threshold: 2         # Time gap to terminate green
       yellow_time: 3
   
-  - name: "webster"
+  - name: "webster"            # Webster's method (traffic engineering approach)
     parameters:
-      saturation_flow: 1800
-      lost_time_per_phase: 2
-      min_cycle: 30
-      max_cycle: 120
+      saturation_flow: 1800    # Maximum vehicles per hour per lane
+      lost_time_per_phase: 2   # Time lost during phase transitions
+      min_cycle: 30            # Minimum cycle length
+      max_cycle: 120           # Maximum cycle length

@@ -4,129 +4,129 @@
 # Common settings for all algorithms
 common:
   # Training settings
-  num_episodes: 500
-  max_episode_steps: 1000
-  eval_frequency: 20
-  eval_episodes: 5
-  checkpoint_frequency: 50
+  num_episodes: 500            # Total number of training episodes
+  max_episode_steps: 1000      # Maximum steps per episode
+  eval_frequency: 20           # Evaluate every N episodes
+  eval_episodes: 5             # Number of episodes for each evaluation
+  checkpoint_frequency: 50     # Save model checkpoint every N episodes
   
   # Neural network architecture
-  hidden_sizes: [256, 256, 128]
-  activation: "relu"
-  use_layer_norm: true
-  weight_init: "kaiming"
+  hidden_sizes: [256, 256, 128]  # Neurons in each hidden layer
+  activation: "relu"           # Activation function
+  use_layer_norm: true         # Layer normalization for stable training
+  weight_init: "kaiming"       # Weight initialization method (preserves variance)
   
   # Optimizer settings
-  optimizer: "adam"
-  weight_decay: 0.01
-  gradient_clip: 1.0
+  optimizer: "adam"            # Adam optimizer with adaptive learning rates
+  weight_decay: 0.01           # L2 regularization to prevent overfitting
+  gradient_clip: 1.0           # Clip gradients to prevent exploding gradients
   
-# DQN Hyperparameters
+# DQN Hyperparameters - Deep Q-Network algorithm settings
 dqn:
   # Basic DQN parameters
-  learning_rate: 5e-4
-  gamma: 0.95
-  buffer_size: 500000
-  batch_size: 512
-  target_update_freq: 500
+  learning_rate: 5e-4          # Step size for gradient updates
+  gamma: 0.95                  # Discount factor for future rewards
+  buffer_size: 500000          # Experience replay buffer capacity
+  batch_size: 512              # Number of samples per learning update
+  target_update_freq: 500      # Update target network every N steps
   
   # Exploration parameters
-  epsilon_start: 1.0
-  epsilon_end: 0.05
-  epsilon_decay_steps: 50000
+  epsilon_start: 1.0           # Initial exploration rate (100% random actions)
+  epsilon_end: 0.05            # Final exploration rate (5% random actions)
+  epsilon_decay_steps: 50000   # Steps to decay from start to end value
   
   # Advanced DQN techniques
-  double_dqn: true
-  dueling_dqn: false
-  n_step_returns: 5
+  double_dqn: true             # Use double DQN (prevents overestimation)
+  dueling_dqn: false           # Dueling architecture (separate value and advantage)
+  n_step_returns: 5            # Use 5-step returns for temporal difference
   
   # Prioritized experience replay
-  use_per: true
-  per_alpha: 0.6
-  per_beta_start: 0.4
-  per_beta_end: 1.0
-  per_beta_steps: 100000
+  use_per: true                # Use prioritized experience replay
+  per_alpha: 0.6               # Priority exponent (0=uniform, 1=full priority)
+  per_beta_start: 0.4          # Initial importance sampling correction
+  per_beta_end: 1.0            # Final importance sampling correction
+  per_beta_steps: 100000       # Steps to anneal beta from start to end
   
   # Architectural enhancements
-  use_noisy_nets: false
-  distributional: false
+  use_noisy_nets: false        # Noisy networks for exploration
+  distributional: false        # Distributional RL (learning value distributions)
 
-# A2C Hyperparameters
+# A2C Hyperparameters - Advantage Actor-Critic settings
 a2c:
   # Learning rates
-  actor_learning_rate: 5e-4
-  critic_learning_rate: 5e-4
+  actor_learning_rate: 5e-4    # Learning rate for policy network
+  critic_learning_rate: 5e-4   # Learning rate for value network
   
   # Discount factors
-  gamma: 0.95
-  gae_lambda: 0.95
+  gamma: 0.95                  # Discount factor for future rewards
+  gae_lambda: 0.95             # Lambda parameter for GAE
   
   # Loss coefficients
-  value_coef: 0.5
-  entropy_coef: 0.01
+  value_coef: 0.5              # Value loss coefficient
+  entropy_coef: 0.01           # Entropy regularization coefficient
   
   # Update parameters
-  num_envs: 8
-  mini_batch_size: 512
-  num_steps: 5
+  num_envs: 8                  # Number of parallel environments
+  mini_batch_size: 512         # Batch size for updates
+  num_steps: 5                 # Steps per environment before update
   
   # GAE parameters
-  normalize_advantage: true
+  normalize_advantage: true    # Normalize advantages (mean=0, std=1)
   
   # Learning rate scheduling
-  lr_warmup_steps: 1000
-  lr_decay: 0.98
+  lr_warmup_steps: 1000        # Gradually increase LR for better stability
+  lr_decay: 0.98               # Learning rate decay factor
   
-# PPO Hyperparameters
+# PPO Hyperparameters - Proximal Policy Optimization settings
 ppo:
   # Learning rates
-  learning_rate: 5e-4
+  learning_rate: 5e-4          # Learning rate for both networks
   
   # Discount factors
-  gamma: 0.95
-  gae_lambda: 0.95
+  gamma: 0.95                  # Discount factor
+  gae_lambda: 0.95             # GAE lambda parameter
   
   # PPO-specific parameters
-  clip_range: 0.2
-  ppo_epochs: 4
-  ppo_mini_batch_size: 512
+  clip_range: 0.2              # Policy ratio clipping range
+  ppo_epochs: 4                # Epochs to train on each batch of data
+  ppo_mini_batch_size: 512     # Mini-batch size for PPO updates
   
   # Loss coefficients
-  value_coef: 0.5
-  entropy_coef: 0.01
+  value_coef: 0.5              # Value loss coefficient
+  entropy_coef: 0.01           # Entropy bonus coefficient
   
   # KL divergence parameters 
-  target_kl: 0.015
+  target_kl: 0.015             # Target KL divergence threshold
   
   # Update parameters
-  num_envs: 8
-  mini_batch_size: 512
-  horizon: 128
+  num_envs: 8                  # Parallel environments
+  mini_batch_size: 512         # Samples per batch
+  horizon: 128                 # Rollout length before update
   
   # Advantage parameters
-  normalize_advantage: true
+  normalize_advantage: true    # Normalize advantages
   
   # Learning rate scheduling
-  lr_warmup_steps: 1000
-  use_linear_lr_decay: true
+  lr_warmup_steps: 1000        # Learning rate warm-up period
+  use_linear_lr_decay: true    # Linearly decay learning rate
   
 # Tabular Q-Learning Hyperparameters (for comparison)
 qlearning:
-  learning_rate: 0.1
-  gamma: 0.95
-  epsilon_start: 1.0
-  epsilon_end: 0.01
-  epsilon_decay: 0.995
-  state_discretization: 5  # Number of buckets for continuous state variables
+  learning_rate: 0.1           # Learning rate for Q-table updates
+  gamma: 0.95                  # Discount factor
+  epsilon_start: 1.0           # Initial exploration rate
+  epsilon_end: 0.01            # Final exploration rate
+  epsilon_decay: 0.995         # Decay factor per episode
+  state_discretization: 5      # Number of buckets for continuous state variables
   
-# Environment-specific hyperparameters
+# Environment-specific hyperparameters - tailored to each environment
 environment_specific:
-  # Single intersection
+  # Single intersection - for IntersectionEnv
   single:
     dqn:
-      state_dim: 14
-      action_dim: 2
-      prioritize_queue_lengths: true
+      state_dim: 14            # Dimensionality of state representation
+      action_dim: 2            # Number of actions (keep/change phase)
+      prioritize_queue_lengths: true  # Focus on longer queues
       
     a2c:
       state_dim: 14
@@ -136,12 +136,12 @@ environment_specific:
       state_dim: 14
       action_dim: 2
       
-  # Multi-intersection - centralized control
+  # Multi-intersection - centralized control (one agent controls all)
   multi_centralized:
     dqn:
       # Based on 2x2 grid with 4 intersections
-      state_dim: 64  # 16 per intersection × 4 intersections
-      action_dim: 16  # 4 possible actions × 4 intersections
+      state_dim: 64            # 16 per intersection × 4 intersections
+      action_dim: 16           # 4 possible actions × 4 intersections
       hidden_sizes: [512, 256, 128]  # Larger network for higher dimension
       
     a2c:
@@ -154,11 +154,11 @@ environment_specific:
       action_dim: 16
       hidden_sizes: [512, 256, 128]
       
-  # Multi-intersection - decentralized control
+  # Multi-intersection - decentralized control (separate agent per intersection)
   multi_decentralized:
     dqn:
-      state_dim: 18  # 14 local + 4 neighboring
-      action_dim: 2
+      state_dim: 18            # 14 local + 4 neighboring intersection info
+      action_dim: 2            # Keep/change phase for each intersection
       
     a2c:
       state_dim: 18
@@ -168,9 +168,9 @@ environment_specific:
       state_dim: 18
       action_dim: 2
       
-# Hardware settings
+# Hardware settings - computational resource configuration
 hardware:
-  device: "cuda"  # "cuda" or "cpu"
-  use_mixed_precision: true
-  cuda_graph_optimization: true
-  num_workers: 4
+  device: "cuda"               # Use GPU for training (or "cpu")
+  use_mixed_precision: true    # Mixed precision for faster training (FP16/FP32)
+  cuda_graph_optimization: true  # CUDA graph optimization for GPU
+  num_workers: 4               # Number of data loading workers
