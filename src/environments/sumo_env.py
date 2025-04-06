@@ -153,6 +153,7 @@ class SUMOIntersectionEnv(gym.Env):
         self.total_throughput = 0
         self.total_switches = 0
         self.prev_vehicle_count = 0
+        self.prev_arrived_count = 0  # Track previously arrived vehicles
 
         # Time variables
         self.time_step = 0
@@ -345,6 +346,7 @@ class SUMOIntersectionEnv(gym.Env):
         self.total_throughput = 0
         self.total_switches = 0
         self.prev_vehicle_count = len(self.sumo.vehicle.getIDList())
+        self.prev_arrived_count = len(self.sumo.simulation.getArrivedIDList())
 
         # Reset time
         self.time_step = 0
@@ -396,31 +398,27 @@ class SUMOIntersectionEnv(gym.Env):
         current_waiting_time = self._get_total_waiting_time()
         wait_time_diff = current_waiting_time - prev_waiting_time
 
-        # Current throughput (vehicles that have completed their routes)
-        current_vehicle_count = len(self.sumo.vehicle.getIDList())
-        throughput = max(
-            0,
-            self.prev_vehicle_count
-            - current_vehicle_count
-            + self._get_new_vehicles_count(),
-        )
-        self.prev_vehicle_count = current_vehicle_count
-        self.total_throughput += throughput
+        # Calculate throughput (vehicles that completed their routes)
+        current_arrived = len(self.sumo.simulation.getArrivedIDList())
+        completed_vehicles = current_arrived - self.prev_arrived_count
+        self.prev_arrived_count = current_arrived
+        self.total_throughput += completed_vehicles
 
         # Update total waiting time
         self.total_wait_time += wait_time_diff
 
         # Calculate reward components
-        reward += self.config["reward_weights"]["throughput"] * throughput
+        reward += self.config["reward_weights"]["throughput"] * completed_vehicles
         reward += self.config["reward_weights"]["wait_time"] * wait_time_diff
-        reward += (
-            self.config["reward_weights"]["queue_length"]
-            * self._get_total_queue_length()
-        )
+        reward += self.config["reward_weights"]["queue_length"] * self._get_total_queue_length()
 
         # Get new observation and info
         observation = self._get_observation()
         info = self._get_info()
+
+        # Update info with current step's throughput
+        info["throughput"] = completed_vehicles
+        info["cumulative_throughput"] = self.total_throughput
 
         # Check termination conditions
         terminated = False
@@ -649,13 +647,12 @@ class SUMOIntersectionEnv(gym.Env):
         return sum(queue_lengths.values())
 
     def _get_new_vehicles_count(self) -> int:
-        """
-        Get the number of new vehicles that entered the simulation.
+        """Get the number of new vehicles that entered the simulation in the last step."""
+        return len(self.sumo.vehicle.getIDList()) - self.prev_vehicle_count
 
-        Returns:
-            Number of new vehicles
-        """
-        return self.sumo.simulation.getDepartedNumber()
+    def _get_completed_vehicles_count(self) -> int:
+        """Get the number of vehicles that completed their routes in the last step."""
+        return len(self.sumo.simulation.getArrivedIDList())
 
     def close(self) -> None:
         """Close the SUMO connection."""

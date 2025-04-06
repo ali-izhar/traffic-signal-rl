@@ -317,11 +317,15 @@ def create_agent(args, env):
         agent_config = {
             "state_dim": state_dim,
             "action_dim": action_dim,
-            "hidden_size": args.hidden_size,
-            "actor_lr": args.learning_rate,
-            "critic_lr": args.learning_rate,
+            "device": "cuda" if torch.cuda.is_available() else "cpu",
+            "lr": args.learning_rate,
             "gamma": args.gamma,
+            "gae_lambda": 0.95,
             "entropy_coef": 0.01,
+            "value_coef": 0.5,
+            "max_grad_norm": 1.0,
+            "hidden_sizes": [256, 128, 64],
+            "checkpoint_dir": os.path.join(args.save_dir, "checkpoints")
         }
         agent = A2CAgent(**agent_config)
     elif args.algorithm == "ppo":
@@ -376,6 +380,10 @@ def setup_logging(args):
 
     log_dir = os.path.join(args.save_dir, run_name)
     os.makedirs(log_dir, exist_ok=True)
+    
+    # Create checkpoints directory
+    checkpoint_dir = os.path.join(log_dir, "checkpoints")
+    os.makedirs(checkpoint_dir, exist_ok=True)
 
     # Save configuration
     with open(os.path.join(log_dir, "config.json"), "w") as f:
@@ -384,7 +392,7 @@ def setup_logging(args):
     # Initialize logger
     logger = Logger(log_dir=log_dir)
 
-    return log_dir, logger
+    return log_dir, logger, checkpoint_dir
 
 
 def evaluate(agent, env, num_episodes=5):
@@ -465,12 +473,28 @@ def train(args):
     # Create environment
     env = create_environment(args)
 
-    # Create agent
-    agent = create_agent(args, env)
-
     # Setup logging
-    log_dir, logger = setup_logging(args)
+    log_dir, logger, checkpoint_dir = setup_logging(args)
     print(f"Logs will be saved to: {log_dir}")
+
+    # Update checkpoint directory in agent config if needed
+    if args.algorithm == "a2c":
+        agent_config = {
+            "state_dim": env.observation_space.shape[0],
+            "action_dim": env.action_space.n,
+            "device": "cuda" if torch.cuda.is_available() else "cpu",
+            "lr": args.learning_rate,
+            "gamma": args.gamma,
+            "gae_lambda": 0.95,
+            "entropy_coef": 0.01,
+            "value_coef": 0.5,
+            "max_grad_norm": 1.0,
+            "hidden_sizes": [256, 128, 64],
+            "checkpoint_dir": checkpoint_dir
+        }
+        agent = A2CAgent(**agent_config)
+    else:
+        agent = create_agent(args, env)
 
     # Training metrics
     best_reward = float("-inf")
@@ -516,6 +540,9 @@ def train(args):
         # Episode loop
         done = False
         truncated = False
+        
+        # Lists to store episode experiences
+        states, actions, rewards, next_states, dones = [], [], [], [], []
 
         while not (done or truncated):
             # Select action
@@ -524,19 +551,30 @@ def train(args):
             # Take action
             next_state, reward, done, truncated, info = env.step(action)
 
-            # Store experience and learn
-            agent.learn(state, action, reward, next_state, done)
+            # Store experience
+            states.append(state)
+            actions.append(action)
+            rewards.append(reward)
+            next_states.append(next_state)
+            dones.append(done)
 
             # Update metrics
             episode_reward += reward
             episode_throughput += info.get("throughput", 0)
-            episode_queue_sum += info.get(
-                "total_queue", sum(state[:4])
-            )  # Assuming first 4 elements are queue lengths
+            episode_queue_sum += info.get("total_queue", sum(state[:4]))
             step_count += 1
 
             # Update state
             state = next_state
+
+            # For A2C, update after every step
+            if args.algorithm == "a2c":
+                agent.update(states, actions, rewards, next_states, dones)
+                # Clear experience lists
+                states, actions, rewards, next_states, dones = [], [], [], [], []
+            else:
+                # For other agents, use their learn method
+                agent.learn(state, action, reward, next_state, done)
 
         # Calculate average queue length
         avg_queue_length = episode_queue_sum / step_count if step_count > 0 else 0
@@ -585,48 +623,45 @@ def train(args):
                 best_reward = eval_metrics["reward"]
                 # Save model if it has a save method
                 if hasattr(agent, "save"):
-                    agent.save(os.path.join(log_dir, "best_model.pt"))
+                    agent.save(os.path.join(checkpoint_dir, "best_model.pt"))
                     print(
                         f"Episode {episode+1}: New best model saved with reward {best_reward:.2f}"
                     )
 
-        # Periodic saving
+        # Save model checkpoint
         if (episode + 1) % args.save_interval == 0:
-            # Save model if it has a save method
-            if hasattr(agent, "save"):
-                agent.save(os.path.join(log_dir, f"model_ep{episode+1}.pt"))
+            agent.save(os.path.join(checkpoint_dir, f"model_episode_{episode+1}.pt"))
 
-            # Save training curves
-            plt.figure(figsize=(15, 5))
+        # Save training curves
+        plt.figure(figsize=(15, 5))
 
-            # Reward plot
-            plt.subplot(1, 3, 1)
-            plt.plot(episode_rewards)
-            plt.title("Episode Rewards")
-            plt.xlabel("Episode")
-            plt.ylabel("Reward")
+        # Reward plot
+        plt.subplot(1, 3, 1)
+        plt.plot(episode_rewards)
+        plt.title("Episode Rewards")
+        plt.xlabel("Episode")
+        plt.ylabel("Reward")
 
-            # Throughput plot
-            plt.subplot(1, 3, 2)
-            plt.plot(episode_throughputs)
-            plt.title("Episode Throughput")
-            plt.xlabel("Episode")
-            plt.ylabel("Throughput")
+        # Throughput plot
+        plt.subplot(1, 3, 2)
+        plt.plot(episode_throughputs)
+        plt.title("Episode Throughput")
+        plt.xlabel("Episode")
+        plt.ylabel("Throughput")
 
-            # Queue length plot
-            plt.subplot(1, 3, 3)
-            plt.plot(episode_queue_lengths)
-            plt.title("Average Queue Length")
-            plt.xlabel("Episode")
-            plt.ylabel("Queue Length")
+        # Queue length plot
+        plt.subplot(1, 3, 3)
+        plt.plot(episode_queue_lengths)
+        plt.title("Average Queue Length")
+        plt.xlabel("Episode")
+        plt.ylabel("Queue Length")
 
-            plt.tight_layout()
-            plt.savefig(os.path.join(log_dir, f"training_curves_ep{episode+1}.png"))
-            plt.close()
+        plt.tight_layout()
+        plt.savefig(os.path.join(log_dir, f"training_curves_ep{episode+1}.png"))
+        plt.close()
 
     # Save final model
-    if hasattr(agent, "save"):
-        agent.save(os.path.join(log_dir, "final_model.pt"))
+    agent.save(os.path.join(checkpoint_dir, "final_model.pt"))
 
     # Final evaluation
     final_metrics = evaluate(agent, env, num_episodes=10)

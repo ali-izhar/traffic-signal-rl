@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions import Categorical
+import numpy as np
 
 
 class SharedNetwork(nn.Module):
@@ -46,24 +47,29 @@ class ActorNetwork(nn.Module):
 
         self.actor_head = nn.Sequential(
             nn.Linear(feature_dim, hidden_size),
+            nn.LayerNorm(hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, action_dim),
+            nn.LayerNorm(action_dim)
         )
 
-        # Initialize weights
+        # Initialize weights with smaller values
         for layer in self.actor_head:
             if isinstance(layer, nn.Linear):
-                nn.init.kaiming_normal_(layer.weight, nonlinearity="relu")
+                nn.init.orthogonal_(layer.weight, gain=0.01)
                 nn.init.zeros_(layer.bias)
 
     def forward(self, features):
         """Compute action logits"""
-        logits = self.actor_head(features)
-        return logits
+        return self.actor_head(features)
 
     def get_action_and_log_prob(self, features, deterministic=False):
         """Get action and log probability"""
         logits = self.forward(features)
+        
+        # Add small epsilon to prevent numerical instability
+        logits = logits.clamp(-10.0, 10.0)
+        
         dist = Categorical(logits=logits)
 
         if deterministic:
@@ -84,13 +90,16 @@ class CriticNetwork(nn.Module):
         super(CriticNetwork, self).__init__()
 
         self.critic_head = nn.Sequential(
-            nn.Linear(feature_dim, hidden_size), nn.ReLU(), nn.Linear(hidden_size, 1)
+            nn.Linear(feature_dim, hidden_size),
+            nn.LayerNorm(hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, 1)
         )
 
-        # Initialize weights
+        # Initialize weights with smaller values
         for layer in self.critic_head:
             if isinstance(layer, nn.Linear):
-                nn.init.kaiming_normal_(layer.weight, nonlinearity="relu")
+                nn.init.orthogonal_(layer.weight, gain=0.01)
                 nn.init.zeros_(layer.bias)
 
     def forward(self, features):
@@ -183,11 +192,11 @@ class A2CAgent:
     def update(self, states, actions, rewards, next_states, dones):
         """Update policy and value networks"""
         # Convert to tensors and move to device
-        states = torch.FloatTensor(states).to(self.device)
-        actions = torch.LongTensor(actions).to(self.device)
-        rewards = torch.FloatTensor(rewards).to(self.device)
-        next_states = torch.FloatTensor(next_states).to(self.device)
-        dones = torch.FloatTensor(dones).to(self.device)
+        states = torch.FloatTensor(np.array(states)).to(self.device)
+        actions = torch.LongTensor(np.array(actions)).to(self.device)
+        rewards = torch.FloatTensor(np.array(rewards)).to(self.device)
+        next_states = torch.FloatTensor(np.array(next_states)).to(self.device)
+        dones = torch.FloatTensor(np.array(dones)).to(self.device)
 
         # Extract features
         features = self.shared_network(states)
@@ -207,8 +216,10 @@ class A2CAgent:
             self.gae_lambda,
         )
 
-        # Normalize advantages
-        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+        # Convert advantages to tensor and normalize
+        advantages = torch.FloatTensor(advantages).to(self.device)
+        if len(advantages) > 1:  # Only normalize if we have more than one sample
+            advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
         # Get log probabilities and entropy
         _, log_probs, entropy = self.actor.get_action_and_log_prob(features, False)
@@ -216,16 +227,12 @@ class A2CAgent:
         # Compute returns for value loss
         returns = advantages + values.detach()
 
-        # Calculate policy loss
-        actor_loss = -(log_probs * advantages).mean()
-
-        # Calculate value loss
+        # Calculate losses with gradient clipping
+        actor_loss = -(log_probs * advantages.detach()).mean()
         critic_loss = F.mse_loss(values, returns)
 
         # Total loss with entropy regularization
-        total_loss = (
-            actor_loss + self.value_coef * critic_loss - self.entropy_coef * entropy
-        )
+        total_loss = actor_loss + self.value_coef * critic_loss - self.entropy_coef * entropy
 
         # Optimize
         self.optimizer.zero_grad()
@@ -236,7 +243,7 @@ class A2CAgent:
             list(self.shared_network.parameters())
             + list(self.actor.parameters())
             + list(self.critic.parameters()),
-            self.max_grad_norm,
+            self.max_grad_norm
         )
 
         self.optimizer.step()

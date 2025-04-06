@@ -39,10 +39,10 @@ environments:
   sumo:
     max_time_steps: 1000       # Maximum simulation steps
     reward_weights:            # Reward components (vehicle dynamics handled by SUMO)
-      queue_length: -1.0
-      wait_time: -0.5
-      throughput: 1.0
-      switch_penalty: -2.0
+      queue_length: -2.0       # Increased penalty for queue length
+      wait_time: -1.0          # Increased penalty for waiting time
+      throughput: 2.0          # Increased reward for throughput
+      switch_penalty: -1.0     # Reduced penalty for phase switches
 
 # Experimental scenarios - different traffic demand patterns for evaluation
 scenarios:
