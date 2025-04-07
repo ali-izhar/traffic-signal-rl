@@ -325,7 +325,7 @@ def create_agent(args, env):
             "value_coef": 0.5,
             "max_grad_norm": 1.0,
             "hidden_sizes": [256, 128, 64],
-            "checkpoint_dir": os.path.join(args.save_dir, "checkpoints")
+            "checkpoint_dir": os.path.join(args.save_dir, "checkpoints"),
         }
         agent = A2CAgent(**agent_config)
     elif args.algorithm == "ppo":
@@ -380,7 +380,7 @@ def setup_logging(args):
 
     log_dir = os.path.join(args.save_dir, run_name)
     os.makedirs(log_dir, exist_ok=True)
-    
+
     # Create checkpoints directory
     checkpoint_dir = os.path.join(log_dir, "checkpoints")
     os.makedirs(checkpoint_dir, exist_ok=True)
@@ -490,7 +490,7 @@ def train(args):
             "value_coef": 0.5,
             "max_grad_norm": 1.0,
             "hidden_sizes": [256, 128, 64],
-            "checkpoint_dir": checkpoint_dir
+            "checkpoint_dir": checkpoint_dir,
         }
         agent = A2CAgent(**agent_config)
     else:
@@ -540,7 +540,7 @@ def train(args):
         # Episode loop
         done = False
         truncated = False
-        
+
         # Lists to store episode experiences
         states, actions, rewards, next_states, dones = [], [], [], [], []
 

@@ -50,7 +50,7 @@ class ActorNetwork(nn.Module):
             nn.LayerNorm(hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, action_dim),
-            nn.LayerNorm(action_dim)
+            nn.LayerNorm(action_dim),
         )
 
         # Initialize weights with smaller values
@@ -66,10 +66,10 @@ class ActorNetwork(nn.Module):
     def get_action_and_log_prob(self, features, deterministic=False):
         """Get action and log probability"""
         logits = self.forward(features)
-        
+
         # Add small epsilon to prevent numerical instability
         logits = logits.clamp(-10.0, 10.0)
-        
+
         dist = Categorical(logits=logits)
 
         if deterministic:
@@ -93,7 +93,7 @@ class CriticNetwork(nn.Module):
             nn.Linear(feature_dim, hidden_size),
             nn.LayerNorm(hidden_size),
             nn.ReLU(),
-            nn.Linear(hidden_size, 1)
+            nn.Linear(hidden_size, 1),
         )
 
         # Initialize weights with smaller values
@@ -232,7 +232,9 @@ class A2CAgent:
         critic_loss = F.mse_loss(values, returns)
 
         # Total loss with entropy regularization
-        total_loss = actor_loss + self.value_coef * critic_loss - self.entropy_coef * entropy
+        total_loss = (
+            actor_loss + self.value_coef * critic_loss - self.entropy_coef * entropy
+        )
 
         # Optimize
         self.optimizer.zero_grad()
@@ -243,7 +245,7 @@ class A2CAgent:
             list(self.shared_network.parameters())
             + list(self.actor.parameters())
             + list(self.critic.parameters()),
-            self.max_grad_norm
+            self.max_grad_norm,
         )
 
         self.optimizer.step()

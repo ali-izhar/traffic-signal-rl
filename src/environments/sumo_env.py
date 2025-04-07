@@ -410,7 +410,10 @@ class SUMOIntersectionEnv(gym.Env):
         # Calculate reward components
         reward += self.config["reward_weights"]["throughput"] * completed_vehicles
         reward += self.config["reward_weights"]["wait_time"] * wait_time_diff
-        reward += self.config["reward_weights"]["queue_length"] * self._get_total_queue_length()
+        reward += (
+            self.config["reward_weights"]["queue_length"]
+            * self._get_total_queue_length()
+        )
 
         # Get new observation and info
         observation = self._get_observation()
