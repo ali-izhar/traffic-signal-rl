@@ -17,12 +17,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 
-# Add src directory to path
-sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
-
 # Import environments
 from environments.intersection_env import IntersectionEnv
-from environments.traffic_env import TrafficMultiEnv
 from environments.sumo_env import SUMOIntersectionEnv
 
 # Import agents
@@ -35,6 +31,8 @@ from agents.baseline_controllers import (
     ActuatedController,
     WebsterController,
 )
+
+from train import create_agent_visualizations
 
 
 def parse_args():
@@ -167,22 +165,7 @@ def create_environment(args, config):
             config=env_config,
         )
     else:
-        env_config = config["environments"]["multi"]
-        env_config["topology"] = args.topology
-        env_config["control_mode"] = args.control_mode
-
-        # Update arrival rates based on scenario
-        scenario_config = config["scenarios"][args.scenario]
-        if args.scenario in ["normal", "unbalanced"]:
-            env_config["arrival_rates"] = scenario_config["arrival_rates"]
-
-        # For variable scenario, start with the first phase
-        if args.scenario == "variable":
-            env_config["arrival_rates"] = scenario_config["phases"][0]["arrival_rates"]
-            env_config["variable_demand"] = True
-            env_config["demand_phases"] = scenario_config["phases"]
-
-        env = TrafficMultiEnv(config=env_config)
+        raise ValueError(f"Unsupported environment type: {args.env_type}")
 
     return env
 
@@ -428,6 +411,26 @@ def evaluate_agent(agent, env, args, config):
             "switches": episode_switches,
         },
     }
+
+    if (
+        hasattr(agent, "plot_learning_progress")
+        or hasattr(agent, "plot_q_value_heatmap")
+        or hasattr(agent, "visualize_q_values")
+        or hasattr(agent, "visualize_policy_distribution")
+    ):
+
+        # Create a visualization sub-directory
+        viz_dir = os.path.join(args.output_dir, f"agent_viz")
+        os.makedirs(viz_dir, exist_ok=True)
+
+        # Generate agent-specific visualizations
+        create_agent_visualizations(agent, viz_dir, 0, state)
+
+        # If it's a tabular agent, show state coverage
+        if hasattr(agent, "get_state_coverage"):
+            coverage_stats = agent.get_state_coverage()
+            with open(os.path.join(viz_dir, "state_coverage.json"), "w") as f:
+                json.dump(coverage_stats, f, indent=4)
 
     return metrics
 

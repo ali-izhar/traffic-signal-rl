@@ -36,7 +36,6 @@ from datetime import datetime
 from tqdm import tqdm
 
 import os
-import sys
 import argparse
 import random
 import json
@@ -45,12 +44,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 
-# Add src directory to path
-sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
-
 # Import environments
 from environments.intersection_env import IntersectionEnv
-from environments.traffic_env import TrafficMultiEnv
 from environments.sumo_env import SUMOIntersectionEnv
 
 # Import all agent implementations
@@ -230,21 +225,6 @@ def create_environment(args):
             "random_seed": args.seed,
         }
         env = IntersectionEnv(config=env_config)
-    elif args.env_type == "multi":
-        env_config = {
-            "topology": args.topology,
-            "max_time_steps": args.max_steps,
-            "control_mode": args.control_mode,
-            "arrival_rates": {"default": 0.2, "peak": 0.4},
-            "reward_weights": {
-                "queue_length": -1.0,
-                "wait_time": -0.5,
-                "throughput": 1.0,
-                "switch_penalty": -2.0,
-            },
-            "random_seed": args.seed,
-        }
-        env = TrafficMultiEnv(config=env_config)
     elif args.env_type == "sumo":
         env_config = {
             "max_time_steps": args.max_steps,
@@ -287,6 +267,8 @@ def create_agent(args, env):
 
     # Create agent based on selected algorithm
     if args.algorithm == "dqn":
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        print(f"Setting DQN agent device to: {device}")
         agent_config = {
             "state_dim": state_dim,
             "action_dim": action_dim,
@@ -299,6 +281,7 @@ def create_agent(args, env):
             "buffer_size": 10000,
             "batch_size": args.batch_size,
             "target_update_freq": args.target_update,
+            "device": device,
         }
         agent = DQNAgent(**agent_config)
     elif args.algorithm == "qlearning":
@@ -310,7 +293,6 @@ def create_agent(args, env):
             "epsilon_start": args.epsilon_start,
             "epsilon_end": args.epsilon_end,
             "epsilon_decay": args.epsilon_decay,
-            "discretization": 5,  # Number of buckets for continuous state variables
         }
         agent = QLearningAgent(**agent_config)
     elif args.algorithm == "a2c":
@@ -325,21 +307,25 @@ def create_agent(args, env):
             "value_coef": 0.5,
             "max_grad_norm": 1.0,
             "hidden_sizes": [256, 128, 64],
-            "checkpoint_dir": os.path.join(args.save_dir, "checkpoints"),
         }
         agent = A2CAgent(**agent_config)
     elif args.algorithm == "ppo":
         agent_config = {
             "state_dim": state_dim,
             "action_dim": action_dim,
-            "hidden_size": args.hidden_size,
-            "learning_rate": args.learning_rate,
+            "hidden_sizes": [
+                args.hidden_size,
+                args.hidden_size // 2,
+                args.hidden_size // 4,
+            ],
+            "lr": args.learning_rate,
             "gamma": args.gamma,
-            "clip_ratio": 0.2,
-            "value_coef": 0.5,
+            "clip_range": 0.2,
+            "critic_coef": 0.5,
             "entropy_coef": 0.01,
             "gae_lambda": 0.95,
-            "batch_size": args.batch_size,
+            "mini_batch_size": args.batch_size,
+            "device": "cuda" if torch.cuda.is_available() else "cpu",
         }
         agent = PPOAgent(**agent_config)
     elif args.algorithm == "fixed":
@@ -465,6 +451,58 @@ def evaluate(agent, env, num_episodes=5):
     }
 
 
+def create_agent_visualizations(agent, log_dir, episode, state=None, is_final=False):
+    """Generate and save agent-specific visualizations.
+
+    Args:
+        agent: The RL agent
+        log_dir: Directory to save plots
+        episode: Current episode number
+        state: Optional current state for policy visualization
+        is_final: Whether this is the final visualization after training
+    """
+    # For Q-learning, only show plots at the end of training
+    if isinstance(agent, QLearningAgent) and not is_final:
+        return
+
+    if hasattr(agent, "plot_learning_progress"):
+        if isinstance(agent, QLearningAgent):
+            # Pass save_path parameter directly for QLearningAgent
+            agent.plot_learning_progress(
+                save_path=os.path.join(log_dir, f"learning_progress_ep{episode+1}.png")
+            )
+        else:
+            # For other agents, create and save figure manually
+            fig = plt.figure(figsize=(15, 10))
+            agent.plot_learning_progress()
+            plt.savefig(os.path.join(log_dir, f"learning_progress_ep{episode+1}.png"))
+            plt.close(fig)
+
+    if hasattr(agent, "plot_q_value_heatmap"):
+        if isinstance(agent, QLearningAgent):
+            # Pass save_path parameter directly for QLearningAgent
+            agent.plot_q_value_heatmap(
+                max_states=50,
+                save_path=os.path.join(log_dir, f"q_heatmap_ep{episode+1}.png"),
+            )
+        else:
+            # For other agents, create and save figure manually
+            fig = plt.figure(figsize=(10, 8))
+            agent.plot_q_value_heatmap(max_states=50)
+            plt.savefig(os.path.join(log_dir, f"q_heatmap_ep{episode+1}.png"))
+            plt.close(fig)
+
+    if hasattr(agent, "visualize_q_values"):
+        agent.visualize_q_values(
+            save_path=os.path.join(log_dir, f"q_values_ep{episode+1}.png")
+        )
+
+    if hasattr(agent, "visualize_policy_distribution") and state is not None:
+        agent.visualize_policy_distribution(
+            state, save_path=os.path.join(log_dir, f"policy_ep{episode+1}.png")
+        )
+
+
 def train(args):
     """Main training loop."""
     # Set random seed
@@ -477,24 +515,8 @@ def train(args):
     log_dir, logger, checkpoint_dir = setup_logging(args)
     print(f"Logs will be saved to: {log_dir}")
 
-    # Update checkpoint directory in agent config if needed
-    if args.algorithm == "a2c":
-        agent_config = {
-            "state_dim": env.observation_space.shape[0],
-            "action_dim": env.action_space.n,
-            "device": "cuda" if torch.cuda.is_available() else "cpu",
-            "lr": args.learning_rate,
-            "gamma": args.gamma,
-            "gae_lambda": 0.95,
-            "entropy_coef": 0.01,
-            "value_coef": 0.5,
-            "max_grad_norm": 1.0,
-            "hidden_sizes": [256, 128, 64],
-            "checkpoint_dir": checkpoint_dir,
-        }
-        agent = A2CAgent(**agent_config)
-    else:
-        agent = create_agent(args, env)
+    # Create agent
+    agent = create_agent(args, env)
 
     # Training metrics
     best_reward = float("-inf")
@@ -537,44 +559,91 @@ def train(args):
         episode_queue_sum = 0
         step_count = 0
 
-        # Episode loop
-        done = False
-        truncated = False
+        # Special case for PPO which needs to collect entire trajectories
+        if args.algorithm == "ppo":
+            # Collect trajectory data
+            states, actions, rewards, next_states, dones = [], [], [], [], []
 
-        # Lists to store episode experiences
-        states, actions, rewards, next_states, dones = [], [], [], [], []
+            # Episode loop for data collection
+            done = False
+            truncated = False
 
-        while not (done or truncated):
-            # Select action
-            action = agent.act(state)
+            while not (done or truncated):
+                # Select action
+                action = agent.act(state)
 
-            # Take action
-            next_state, reward, done, truncated, info = env.step(action)
+                # Take action
+                next_state, reward, done, truncated, info = env.step(action)
 
-            # Store experience
-            states.append(state)
-            actions.append(action)
-            rewards.append(reward)
-            next_states.append(next_state)
-            dones.append(done)
+                # Store experience
+                states.append(state)
+                actions.append(action)
+                rewards.append(reward)
+                next_states.append(next_state)
+                dones.append(done)
 
-            # Update metrics
-            episode_reward += reward
-            episode_throughput += info.get("throughput", 0)
-            episode_queue_sum += info.get("total_queue", sum(state[:4]))
-            step_count += 1
+                # Update metrics
+                episode_reward += reward
+                episode_throughput += info.get("throughput", 0)
+                episode_queue_sum += info.get("total_queue", sum(state[:4]))
+                step_count += 1
 
-            # Update state
-            state = next_state
+                # Update state
+                state = next_state
 
-            # For A2C, update after every step
-            if args.algorithm == "a2c":
-                agent.update(states, actions, rewards, next_states, dones)
-                # Clear experience lists
-                states, actions, rewards, next_states, dones = [], [], [], [], []
-            else:
-                # For other agents, use their learn method
-                agent.learn(state, action, reward, next_state, done)
+            # Prepare trajectory for PPO update
+            trajectory = {
+                "states": np.array(states),
+                "actions": np.array(actions),
+                "rewards": np.array(rewards),
+                "next_states": np.array(next_states),
+                "dones": np.array(dones),
+                "episode_rewards": [episode_reward],
+                "episode_lengths": [step_count],
+            }
+
+            # Update PPO agent with collected trajectory
+            if len(states) > 0:
+                agent.update(trajectory)
+        else:
+            # Standard episode loop for DQN, A2C, Q-learning
+            done = False
+            truncated = False
+
+            # Lists to store episode experiences
+            states, actions, rewards, next_states, dones = [], [], [], [], []
+
+            while not (done or truncated):
+                # Select action
+                action = agent.act(state)
+
+                # Take action
+                next_state, reward, done, truncated, info = env.step(action)
+
+                # Store experience
+                states.append(state)
+                actions.append(action)
+                rewards.append(reward)
+                next_states.append(next_state)
+                dones.append(done)
+
+                # Update metrics
+                episode_reward += reward
+                episode_throughput += info.get("throughput", 0)
+                episode_queue_sum += info.get("total_queue", sum(state[:4]))
+                step_count += 1
+
+                # Update state
+                state = next_state
+
+                # For A2C, update after every step
+                if args.algorithm == "a2c":
+                    agent.update(states, actions, rewards, next_states, dones)
+                    # Clear experience lists
+                    states, actions, rewards, next_states, dones = [], [], [], [], []
+                else:
+                    # For other agents, use their learn method
+                    agent.learn(state, action, reward, next_state, done)
 
         # Calculate average queue length
         avg_queue_length = episode_queue_sum / step_count if step_count > 0 else 0
@@ -632,36 +701,18 @@ def train(args):
         if (episode + 1) % args.save_interval == 0:
             agent.save(os.path.join(checkpoint_dir, f"model_episode_{episode+1}.pt"))
 
-        # Save training curves
-        plt.figure(figsize=(15, 5))
-
-        # Reward plot
-        plt.subplot(1, 3, 1)
-        plt.plot(episode_rewards)
-        plt.title("Episode Rewards")
-        plt.xlabel("Episode")
-        plt.ylabel("Reward")
-
-        # Throughput plot
-        plt.subplot(1, 3, 2)
-        plt.plot(episode_throughputs)
-        plt.title("Episode Throughput")
-        plt.xlabel("Episode")
-        plt.ylabel("Throughput")
-
-        # Queue length plot
-        plt.subplot(1, 3, 3)
-        plt.plot(episode_queue_lengths)
-        plt.title("Average Queue Length")
-        plt.xlabel("Episode")
-        plt.ylabel("Queue Length")
-
-        plt.tight_layout()
-        plt.savefig(os.path.join(log_dir, f"training_curves_ep{episode+1}.png"))
-        plt.close()
+        # Create agent-specific visualizations
+        create_agent_visualizations(
+            agent, log_dir, episode, state=state, is_final=False
+        )
 
     # Save final model
     agent.save(os.path.join(checkpoint_dir, "final_model.pt"))
+
+    # Generate final visualizations for Q-learning or any other agent
+    create_agent_visualizations(
+        agent, log_dir, args.episodes - 1, state=state, is_final=True
+    )
 
     # Final evaluation
     final_metrics = evaluate(agent, env, num_episodes=10)

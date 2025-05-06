@@ -178,3 +178,28 @@ paper/
 
 # demos/
 demos/
+
+# logs
+logs/
+
+# results
+results/
+
+# jupyter notebooks
+*.ipynb
+
+# checkpoints
+checkpoints/
+
+# model checkpoints
+model_checkpoints/
+
+# tensorboard logs
+tensorboard/
+
+# wandb logs
+wandb/
+
+# tmp txt files
+*tmp*.txt
+

@@ -1,6 +1,6 @@
 # Traffic Signal Control with Reinforcement Learning
 
-This repository implements adaptive traffic signal control using reinforcement learning (RL) techniques, as described in the paper "Adaptive Traffic Signal Control with Reinforcement Learning".
+This repository implements adaptive traffic signal control using reinforcement learning (RL) techniques to optimize traffic flow at signalized intersections.
 
 ## 📋 Project Overview
 
@@ -8,38 +8,80 @@ This project explores the application of reinforcement learning for adaptive tra
 
 The implementation includes:
 
-- Single and multi-intersection traffic environments
+- SUMO-based traffic simulation environments
 - Multiple RL algorithms (DQN, A2C, PPO, Q-learning)
-- Traditional baseline controllers (fixed-timing, actuated)
+- Traditional baseline controllers (fixed-timing, actuated, Webster)
 - Comprehensive evaluation framework
 - Visualization tools
 
-## 🚦 Environments
+## 🚦 Project Structure
 
-### Single Intersection
+```
+traffic-signal-rl/
+├── src/                    # Source code
+│   ├── agents/             # RL agent implementations
+│   │   ├── a2c_agent.py    # Advantage Actor-Critic implementation
+│   │   ├── dqn_agent.py    # Deep Q-Network implementation
+│   │   ├── ppo_agent.py    # Proximal Policy Optimization implementation
+│   │   ├── qlearning.py    # Tabular Q-learning implementation
+│   │   └── base_agent.py   # Abstract base class for all agents
+│   ├── environments/       # Traffic environments
+│   │   ├── sumo_env.py     # SUMO-based traffic simulation environment
+│   │   └── utils/          # Environment utility functions
+│   ├── utils/              # Utility functions
+│   │   ├── metrics.py      # Performance metrics calculation
+│   │   ├── logger.py       # Logging utilities
+│   │   ├── visualization.py # Visualization tools
+│   │   └── replay_buffer.py # Experience replay for DQN
+│   ├── data/               # Simulation data
+│   │   └── simulation/     # SUMO configuration files
+│   │       └── networks/   # Road network definitions
+│   ├── config/             # Configuration files
+│   │   ├── hyperparameters.yaml # Algorithm-specific hyperparameters
+│   │   └── evaluation_config.yaml # Evaluation settings
+│   ├── scripts/            # Training and evaluation scripts
+│   │   ├── train.py        # Main training script
+│   │   ├── evaluate.py     # Evaluation script
+│   │   ├── compare_models.py # Model comparison tool
+│   │   └── analyze_results.py # Results analysis
+│   └── demos/              # Interactive demonstrations
+├── logs/                   # Training logs
+├── results/                # Evaluation results
+└── tests/                  # Test scripts
+```
 
-The `IntersectionEnv` simulates a four-way intersection with configurable traffic patterns. The agent controls the traffic signals, deciding when to change the signal phase to optimize traffic flow.
+## 📚 Module Descriptions
 
-### Multi-Intersection Network
+### Agents
 
-The `TrafficMultiEnv` extends the simulation to multiple connected intersections, supporting both centralized and decentralized control strategies.
+- **`a2c_agent.py`**: Implements the Advantage Actor-Critic algorithm with a shared network architecture for feature extraction, separate actor (policy) and critic (value function) networks, and Generalized Advantage Estimation (GAE).
+- **`dqn_agent.py`**: Deep Q-Network implementation with double DQN, prioritized experience replay, and dueling network architecture.
+- **`ppo_agent.py`**: Proximal Policy Optimization with clipped objective function for stable policy updates.
+- **`qlearning.py`**: Traditional tabular Q-learning for discrete state spaces, serving as a baseline.
+- **`base_agent.py`**: Abstract base class defining the interface for all RL agents.
 
-## 🤖 Agents
+### Environments
 
-The following control methods are implemented:
+- **`sumo_env.py`**: A wrapper for the SUMO traffic simulator that provides a reinforcement learning interface (observation space, action space, reward function) for traffic signal control.
 
-### RL Agents
+### Utils
 
-- **DQN (Deep Q-Network)**: Includes double DQN, prioritized experience replay, and n-step returns
-- **A2C (Advantage Actor-Critic)**: Policy gradient method with baseline value function
-- **PPO (Proximal Policy Optimization)**: More stable policy updates with clipped objective
-- **Q-Learning**: Tabular approach for baseline comparison
+- **`metrics.py`**: Functions for calculating performance metrics like average waiting time, queue length, throughput, and emissions.
+- **`logger.py`**: Utilities for logging training progress and evaluation results.
+- **`visualization.py`**: Tools for visualizing traffic states, learning curves, and performance comparisons.
+- **`replay_buffer.py`**: Implementation of experience replay buffer with prioritization for DQN.
 
-### Traditional Controllers
+### Configuration
 
-- **Fixed-timing**: Predefined cycle lengths and green splits
-- **Actuated**: Vehicle-actuated control with extension logic
-- **Webster**: Adaptive signal timing based on the Webster formula
+- **`hyperparameters.yaml`**: Contains algorithm-specific hyperparameters for each RL method.
+- **`evaluation_config.yaml`**: Settings for evaluation scenarios and metrics.
+
+### Scripts
+
+- **`train.py`**: Main script for training RL agents with configurable hyperparameters and environments.
+- **`evaluate.py`**: Script for evaluating trained agents across different traffic scenarios.
+- **`compare_models.py`**: Tool for comparing performance of different control strategies.
+- **`analyze_results.py`**: Script for generating metrics and visualizations from evaluation results.
 
 ## 🔧 Installation
 
@@ -54,39 +96,39 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Verify SUMO installation
+sumo --version
 ```
 
 ## 🚀 Usage
 
 ### Training
 
-To train an agent on a single intersection:
+The `train.py` script supports various algorithms and traffic scenarios:
 
 ```bash
-python src/scripts/train.py --algorithm dqn --env_type single --episodes 500
-```
-
-For multi-intersection scenarios:
-
-```bash
-python src/scripts/train.py --algorithm a2c --env_type multi --topology 2x2_grid --control_mode decentralized
+# Train DQN agent on variable demand scenario
+python src/scripts/train.py --algorithm dqn --env_type sumo --sumo_config src/data/simulation/networks/variable_demand.sumocfg --episodes 1000 --batch_size 512 --learning_rate 5e-4 --target_update 10 --save_dir logs/dqn/variable
 ```
 
 ### Evaluation
 
-To evaluate agents across different traffic scenarios:
+To evaluate trained agents across different traffic scenarios:
 
 ```bash
-python src/scripts/evaluate.py --methods dqn a2c ppo fixed actuated --env_type single --scenario normal
+# Evaluate trained DQN agent
+python src/scripts/evaluate.py --algorithm dqn --env_type sumo --sumo_config src/data/simulation/networks/variable_demand.sumocfg --model_path logs/dqn/variable/checkpoints/best_model.pt --episodes 100 --render true --save_video true --output_dir evaluation/dqn
 ```
 
-For visualizing traffic state:
+For comparing multiple agents:
 
 ```bash
-python src/demos/traffic_signal_demo.py
+# Compare all control strategies
+python src/scripts/compare_models.py --config_path src/config/evaluation_config.yaml --output_dir comparison
 ```
 
-## 📊 Results
+## 📊 Performance Metrics
 
 The framework provides comprehensive evaluation metrics:
 
@@ -96,6 +138,8 @@ The framework provides comprehensive evaluation metrics:
 - Travel time
 - CO2 emissions (estimated)
 
+## 📈 Visualization
+
 Visualization tools include:
 
 - Learning curves
@@ -103,55 +147,14 @@ Visualization tools include:
 - Traffic state visualizations
 - Statistical significance tests
 
-## 📂 Project Structure
+View learning curves in real-time:
 
-```
-traffic-signal-rl/
-├── paper/                  # Paper and related materials
-├── src/                    # Source code
-│   ├── agents/             # RL agent implementations
-│   ├── environments/       # Traffic environments
-│   ├── utils/              # Utility functions
-│   ├── demos/              # Interactive demonstrations
-│   ├── scripts/            # Training and evaluation scripts
-│   └── config/             # Configuration files
-├── logs/                   # Training logs
-├── results/                # Evaluation results
-└── tests/                  # Test scripts
+```bash
+# Run TensorBoard to view learning curves
+tensorboard --logdir=logs
 ```
 
-## ⚙️ Configuration
-
-Configuration files are located in the `src/config` directory:
-
-- `config.yaml`: Environment and experiment settings
-- `hyperparameters.yaml`: Algorithm-specific hyperparameters
-
-## 🔍 Experiments
-
-The paper demonstrates several experiments:
-
-1. **Single intersection with varying traffic conditions**
-2. **2×2 grid with coordinated traffic flow**
-3. **Variable demand scenario simulating peak/off-peak hours**
-
-
-## 📝 Citation
-
-If you use this code in your research, please cite our paper:
-
-```bibtex
-@article{author2023adaptive,
-  title={Adaptive Traffic Signal Control with Reinforcement Learning},
-  author={Ali, Izhar and Haileyesus, Million},
-  journal={Journal Name},
-  year={2025},
-  volume={},
-  pages={}
-}
-```
-
-## 📄 License
+## 📝 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
