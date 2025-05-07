@@ -1,8 +1,6 @@
 import traci
 import numpy as np
-import random
 import timeit
-import os
 
 # phase codes based on environment.net.xml
 PHASE_NS_GREEN = 0  # action 0 code 00
@@ -18,8 +16,7 @@ PHASE_EWL_YELLOW = 7
 class Simulation:
     def __init__(
         self,
-        Model,
-        Memory,
+        agent,
         TrafficGen,
         sumo_cmd,
         gamma,
@@ -28,10 +25,8 @@ class Simulation:
         yellow_duration,
         num_states,
         num_actions,
-        training_epochs,
     ):
-        self._Model = Model
-        self._Memory = Memory
+        self._agent = agent
         self._TrafficGen = TrafficGen
         self._gamma = gamma
         self._step = 0
@@ -44,7 +39,6 @@ class Simulation:
         self._reward_store = []
         self._cumulative_wait_store = []
         self._avg_queue_length_store = []
-        self._training_epochs = training_epochs
 
     def run(self, episode, epsilon):
         """
@@ -77,12 +71,13 @@ class Simulation:
             current_total_wait = self._collect_waiting_times()
             reward = old_total_wait - current_total_wait
 
-            # saving the data into the memory
+            # save the data into the agent if not the first step
             if self._step != 0:
-                self._Memory.add_sample((old_state, old_action, reward, current_state))
+                # Use the agent interface for learning
+                self._agent.learn(old_state, old_action, reward, current_state)
 
             # choose the light phase to activate, based on the current state of the intersection
-            action = self._choose_action(current_state, epsilon)
+            action = self._agent.act(current_state, epsilon)
 
             # if the chosen phase is different from the last phase, activate the yellow phase
             if self._step != 0 and old_action != action:
@@ -107,13 +102,7 @@ class Simulation:
         traci.close()
         simulation_time = round(timeit.default_timer() - start_time, 1)
 
-        print("Training...")
-        start_time = timeit.default_timer()
-        for _ in range(self._training_epochs):
-            self._replay()
-        training_time = round(timeit.default_timer() - start_time, 1)
-
-        return simulation_time, training_time
+        return simulation_time
 
     def _simulate(self, steps_todo):
         """
@@ -154,17 +143,6 @@ class Simulation:
                     del self._waiting_times[car_id]
         total_waiting_time = sum(self._waiting_times.values())
         return total_waiting_time
-
-    def _choose_action(self, state, epsilon):
-        """
-        Decide wheter to perform an explorative or exploitative action, according to an epsilon-greedy policy
-        """
-        if random.random() < epsilon:
-            return random.randint(0, self._num_actions - 1)  # random action
-        else:
-            return np.argmax(
-                self._Model.predict_one(state)
-            )  # the best action given the current state
 
     def _set_yellow_phase(self, old_action):
         """
@@ -273,48 +251,6 @@ class Simulation:
                 )
 
         return state
-
-    def _replay(self):
-        """
-        Retrieve a group of samples from the memory and for each of them update the learning equation, then train
-        """
-        batch = self._Memory.get_samples(self._Model.batch_size)
-
-        if len(batch) > 0:  # if the memory is full enough
-            states = np.array(
-                [val[0] for val in batch]
-            )  # extract states from the batch
-            next_states = np.array(
-                [val[3] for val in batch]
-            )  # extract next states from the batch
-
-            # prediction
-            q_s_a = self._Model.predict_batch(
-                states
-            )  # predict Q(state), for every sample
-            q_s_a_d = self._Model.predict_batch(
-                next_states
-            )  # predict Q(next_state), for every sample
-
-            # setup training arrays
-            x = np.zeros((len(batch), self._num_states))
-            y = np.zeros((len(batch), self._num_actions))
-
-            for i, b in enumerate(batch):
-                state, action, reward, _ = (
-                    b[0],
-                    b[1],
-                    b[2],
-                    b[3],
-                )  # extract data from one sample
-                current_q = q_s_a[i]  # get the Q(state) predicted before
-                current_q[action] = reward + self._gamma * np.amax(
-                    q_s_a_d[i]
-                )  # update Q(state, action)
-                x[i] = state
-                y[i] = current_q  # Q(state) that includes the updated action value
-
-            self._Model.train_batch(x, y)  # train the NN
 
     def _save_episode_stats(self):
         """

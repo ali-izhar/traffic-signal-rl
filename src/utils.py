@@ -11,24 +11,84 @@ def import_train_configuration(config_file):
     content = configparser.ConfigParser()
     content.read(config_file)
     config = {}
+
+    # Simulation configuration
     config["gui"] = content["simulation"].getboolean("gui")
     config["total_episodes"] = content["simulation"].getint("total_episodes")
     config["max_steps"] = content["simulation"].getint("max_steps")
     config["n_cars_generated"] = content["simulation"].getint("n_cars_generated")
     config["green_duration"] = content["simulation"].getint("green_duration")
     config["yellow_duration"] = content["simulation"].getint("yellow_duration")
-    config["num_layers"] = content["model"].getint("num_layers")
-    config["width_layers"] = content["model"].getint("width_layers")
-    config["batch_size"] = content["model"].getint("batch_size")
-    config["learning_rate"] = content["model"].getfloat("learning_rate")
-    config["training_epochs"] = content["model"].getint("training_epochs")
-    config["memory_size_min"] = content["memory"].getint("memory_size_min")
-    config["memory_size_max"] = content["memory"].getint("memory_size_max")
+
+    # Agent configuration
+    config["agent_type"] = content["agent"]["type"]
     config["num_states"] = content["agent"].getint("num_states")
     config["num_actions"] = content["agent"].getint("num_actions")
     config["gamma"] = content["agent"].getfloat("gamma")
+
+    # DQN-specific parameters
+    if config["agent_type"] == "dqn":
+        config["num_layers"] = content["dqn"].getint("num_layers")
+        config["width_layers"] = content["dqn"].getint("width_layers")
+        config["batch_size"] = content["dqn"].getint("batch_size")
+        config["learning_rate"] = content["dqn"].getfloat("learning_rate")
+        config["training_epochs"] = content["dqn"].getint("training_epochs")
+        config["memory_size_min"] = content["dqn"].getint("memory_size_min")
+        config["memory_size_max"] = content["dqn"].getint("memory_size_max")
+
+    # Q-Learning specific parameters
+    elif config["agent_type"] == "qlearning":
+        config["qlearning_learning_rate"] = content["qlearning"].getfloat(
+            "learning_rate"
+        )
+        config["initial_value"] = content["qlearning"].getfloat("initial_value")
+
+    # A2C specific parameters
+    elif config["agent_type"] == "a2c":
+        config["actor_lr"] = content["a2c"].getfloat("actor_lr")
+        config["critic_lr"] = content["a2c"].getfloat("critic_lr")
+        config["shared_layers"] = content["a2c"].getint("shared_layers")
+        config["shared_width"] = content["a2c"].getint("shared_width")
+        config["actor_layers"] = content["a2c"].getint("actor_layers")
+        config["actor_width"] = content["a2c"].getint("actor_width")
+        config["critic_layers"] = content["a2c"].getint("critic_layers")
+        config["critic_width"] = content["a2c"].getint("critic_width")
+
+    # PPO specific parameters
+    elif config["agent_type"] == "ppo":
+        config["actor_lr"] = content["ppo"].getfloat("actor_lr")
+        config["critic_lr"] = content["ppo"].getfloat("critic_lr")
+        config["lambd"] = content["ppo"].getfloat("lambd")
+        config["clip_ratio"] = content["ppo"].getfloat("clip_ratio")
+        config["epochs"] = content["ppo"].getint("epochs")
+        config["batch_size"] = content["ppo"].getint("batch_size")
+        config["shared_layers"] = content["ppo"].getint("shared_layers")
+        config["shared_width"] = content["ppo"].getint("shared_width")
+        config["actor_layers"] = content["ppo"].getint("actor_layers")
+        config["actor_width"] = content["ppo"].getint("actor_width")
+        config["critic_layers"] = content["ppo"].getint("critic_layers")
+        config["critic_width"] = content["ppo"].getint("critic_width")
+
+    # Baseline controllers specific parameters
+    elif config["agent_type"] in ["fixed", "actuated", "webster"]:
+        if config["agent_type"] in ["actuated", "webster"]:
+            config["min_green"] = content["baseline"].getint("min_green")
+            config["max_green"] = content["baseline"].getint("max_green")
+            config["extension_time"] = content["baseline"].getint("extension_time")
+
+        if config["agent_type"] == "webster":
+            config["saturation_flow_rate"] = content["baseline"].getint(
+                "saturation_flow_rate"
+            )
+            config["lost_time_per_phase"] = content["baseline"].getint(
+                "lost_time_per_phase"
+            )
+            config["update_interval"] = content["baseline"].getint("update_interval")
+
+    # Directory paths
     config["models_path_name"] = content["dir"]["models_path_name"]
     config["sumocfg_file_name"] = content["dir"]["sumocfg_file_name"]
+
     return config
 
 
@@ -39,17 +99,25 @@ def import_test_configuration(config_file):
     content = configparser.ConfigParser()
     content.read(config_file)
     config = {}
+
+    # Simulation configuration
     config["gui"] = content["simulation"].getboolean("gui")
     config["max_steps"] = content["simulation"].getint("max_steps")
     config["n_cars_generated"] = content["simulation"].getint("n_cars_generated")
     config["episode_seed"] = content["simulation"].getint("episode_seed")
     config["green_duration"] = content["simulation"].getint("green_duration")
     config["yellow_duration"] = content["simulation"].getint("yellow_duration")
+
+    # Agent configuration
+    config["agent_type"] = content["agent"]["type"]
     config["num_states"] = content["agent"].getint("num_states")
     config["num_actions"] = content["agent"].getint("num_actions")
+
+    # Directory paths
     config["sumocfg_file_name"] = content["dir"]["sumocfg_file_name"]
     config["models_path_name"] = content["dir"]["models_path_name"]
     config["model_to_test"] = content["dir"].getint("model_to_test")
+
     return config
 
 

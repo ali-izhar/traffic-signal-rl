@@ -205,3 +205,5 @@ wandb/
 
 # legacy
 src1/
+
+src/models*/

@@ -1,8 +1,6 @@
 import traci
 import numpy as np
-import random
 import timeit
-import os
 
 # phase codes based on environment.net.xml
 PHASE_NS_GREEN = 0  # action 0 code 00
@@ -18,7 +16,7 @@ PHASE_EWL_YELLOW = 7
 class Simulation:
     def __init__(
         self,
-        Model,
+        agent,
         TrafficGen,
         sumo_cmd,
         max_steps,
@@ -27,7 +25,7 @@ class Simulation:
         num_states,
         num_actions,
     ):
-        self._Model = Model
+        self._agent = agent
         self._TrafficGen = TrafficGen
         self._step = 0
         self._sumo_cmd = sumo_cmd
@@ -67,7 +65,7 @@ class Simulation:
             reward = old_total_wait - current_total_wait
 
             # choose the light phase to activate, based on the current state of the intersection
-            action = self._choose_action(current_state)
+            action = self._agent.act(current_state)
 
             # if the chosen phase is different from the last phase, activate the yellow phase
             if self._step != 0 and old_action != action:
@@ -128,12 +126,6 @@ class Simulation:
                     del self._waiting_times[car_id]
         total_waiting_time = sum(self._waiting_times.values())
         return total_waiting_time
-
-    def _choose_action(self, state):
-        """
-        Pick the best action known based on the current state of the env
-        """
-        return np.argmax(self._Model.predict_one(state))
 
     def _set_yellow_phase(self, old_action):
         """

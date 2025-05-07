@@ -6,9 +6,19 @@ from shutil import copyfile
 
 from testing_simulation import Simulation
 from generator import TrafficGenerator
-from model import TestModel
 from visualization import Visualization
 from utils import import_test_configuration, set_sumo, set_test_path
+
+# Import all agent types
+from agents.dqn_agent import DQNAgent
+from agents.qlearning_agent import QLearningAgent
+from agents.a2c_agent import A2CAgent
+from agents.ppo_agent import PPOAgent
+from agents.baseline_controllers import (
+    FixedTimingController,
+    ActuatedController,
+    WebsterController,
+)
 
 
 if __name__ == "__main__":
@@ -19,14 +29,59 @@ if __name__ == "__main__":
         config["models_path_name"], config["model_to_test"]
     )
 
-    Model = TestModel(input_dim=config["num_states"], model_path=model_path)
+    # Create agent based on configuration
+    agent_type = config["agent_type"]
+
+    if agent_type == "dqn":
+        agent = DQNAgent(
+            input_dim=config["num_states"],
+            output_dim=config["num_actions"],
+        )
+    elif agent_type == "qlearning":
+        agent = QLearningAgent(
+            input_dim=config["num_states"],
+            output_dim=config["num_actions"],
+        )
+    elif agent_type == "a2c":
+        agent = A2CAgent(
+            input_dim=config["num_states"],
+            output_dim=config["num_actions"],
+        )
+    elif agent_type == "ppo":
+        agent = PPOAgent(
+            input_dim=config["num_states"],
+            output_dim=config["num_actions"],
+        )
+    elif agent_type == "fixed":
+        agent = FixedTimingController(
+            input_dim=config["num_states"],
+            output_dim=config["num_actions"],
+        )
+    elif agent_type == "actuated":
+        agent = ActuatedController(
+            input_dim=config["num_states"],
+            output_dim=config["num_actions"],
+            yellow_time=config["yellow_duration"],
+        )
+    elif agent_type == "webster":
+        agent = WebsterController(
+            input_dim=config["num_states"],
+            output_dim=config["num_actions"],
+            yellow_time=config["yellow_duration"],
+        )
+    else:
+        raise ValueError(f"Unknown agent type: {agent_type}")
+
+    # Load the model for RL agents (not needed for baseline controllers)
+    if agent_type in ["dqn", "qlearning", "a2c", "ppo"]:
+        agent.load(model_path)
 
     TrafficGen = TrafficGenerator(config["max_steps"], config["n_cars_generated"])
 
     Visualization = Visualization(plot_path, dpi=96)
 
     Simulation = Simulation(
-        Model,
+        agent,
         TrafficGen,
         sumo_cmd,
         config["max_steps"],
