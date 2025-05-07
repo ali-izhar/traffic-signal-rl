@@ -12,6 +12,21 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import plot_model
 from tensorflow.keras.models import load_model
 
+# Enable GPU memory growth to avoid allocating all GPU memory at once
+physical_devices = tf.config.list_physical_devices("GPU")
+if physical_devices:
+    try:
+        for device in physical_devices:
+            tf.config.experimental.set_memory_growth(device, True)
+        print(f"Found {len(physical_devices)} GPU(s). Memory growth enabled.")
+    except Exception as e:
+        print(f"Error setting memory growth: {e}")
+
+# Enable mixed precision for faster training on Ampere GPUs
+mixed_precision = tf.keras.mixed_precision.Policy("mixed_float16")
+tf.keras.mixed_precision.set_global_policy(mixed_precision)
+print(f"Mixed precision policy set to: {mixed_precision.name}")
+
 
 class TrainModel:
     def __init__(
@@ -25,18 +40,28 @@ class TrainModel:
 
     def _build_model(self, num_layers, width):
         """
-        Build and compile a fully connected deep neural network
+        Build and compile a fully connected deep neural network with proper GPU optimization
         """
         inputs = keras.Input(shape=(self._input_dim,))
-        x = layers.Dense(width, activation="relu")(inputs)
+        x = layers.Dense(width, activation="relu", dtype="float16")(inputs)
         for _ in range(num_layers):
-            x = layers.Dense(width, activation="relu")(x)
-        outputs = layers.Dense(self._output_dim, activation="linear")(x)
+            x = layers.Dense(width, activation="relu", dtype="float16")(x)
+
+        # Final layer uses float32 for numerical stability
+        outputs = layers.Dense(self._output_dim, activation="linear", dtype="float32")(
+            x
+        )
 
         model = keras.Model(inputs=inputs, outputs=outputs, name="my_model")
+
+        # Use AMP-friendly optimizer with epsilon parameter
+        opt = Adam(learning_rate=self._learning_rate, epsilon=1e-7)
+
         model.compile(
             loss=losses.MeanSquaredError(),
-            optimizer=Adam(learning_rate=self._learning_rate),
+            optimizer=opt,
+            # Enable JIT compilation for faster execution
+            jit_compile=True,
         )
         return model
 
@@ -45,19 +70,27 @@ class TrainModel:
         Predict the action values from a single state
         """
         state = np.reshape(state, [1, self._input_dim])
-        return self._model.predict(state)
+        return self._model.predict(state, verbose=0)
 
     def predict_batch(self, states):
         """
         Predict the action values from a batch of states
         """
-        return self._model.predict(states)
+        return self._model.predict(states, verbose=0)
 
     def train_batch(self, states, q_sa):
         """
-        Train the nn using the updated q-values
+        Train the nn using the updated q-values with GPU optimization
         """
-        self._model.fit(states, q_sa, epochs=1, verbose=0)
+        self._model.fit(
+            states,
+            q_sa,
+            epochs=1,
+            verbose=0,
+            batch_size=min(self._batch_size, len(states)),
+            use_multiprocessing=True,
+            workers=4,
+        )
 
     def save_model(self, path):
         """
@@ -114,7 +147,7 @@ class TestModel:
         Predict the action values from a single state
         """
         state = np.reshape(state, [1, self._input_dim])
-        return self._model.predict(state)
+        return self._model.predict(state, verbose=0)
 
     @property
     def input_dim(self):
