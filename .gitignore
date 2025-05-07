@@ -203,3 +203,5 @@ wandb/
 # tmp txt files
 *tmp*.txt
 
+# legacy
+src1/
