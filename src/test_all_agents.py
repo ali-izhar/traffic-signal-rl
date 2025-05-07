@@ -194,9 +194,6 @@ def main():
     # Create optimized configuration
     create_optimized_config_for_rtx_4090()
 
-    # Configure GPU for optimal performance
-    configure_gpu()
-
     # Import the optimized configuration
     config = configparser.ConfigParser()
     config.read("training_settings.ini")
@@ -213,6 +210,29 @@ def main():
     for section, items in config_dict.items():
         for key, value in items.items():
             flat_config[key] = value
+    
+    # Convert string values to appropriate types
+    # Integers
+    for key in ["num_states", "num_actions", "max_steps", "n_cars_generated", 
+                "num_layers", "width_layers", "batch_size", 
+                "memory_size_min", "memory_size_max", "target_update_frequency",
+                "green_duration", "yellow_duration", "total_episodes",
+                "shared_layers", "shared_width", "actor_layers", "actor_width",
+                "critic_layers", "critic_width", "epochs",
+                "min_green", "max_green", "extension_time", 
+                "saturation_flow_rate", "lost_time_per_phase", "update_interval"]:
+        if key in flat_config:
+            flat_config[key] = int(flat_config[key])
+    
+    # Floats
+    for key in ["learning_rate", "gamma", "initial_value", "actor_lr", "critic_lr",
+                "entropy_coef", "value_coef", "lambd", "clip_ratio",
+                "qlearning_learning_rate"]:
+        if key in flat_config:
+            flat_config[key] = float(flat_config[key])
+
+    # Configure GPU for optimal performance with the config
+    configure_gpu(flat_config)
 
     # Check if specific agent types are requested
     agent_types = ["dqn", "qlearning", "a2c", "ppo", "fixed", "actuated", "webster"]

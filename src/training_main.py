@@ -29,7 +29,7 @@ from agents.baseline_controllers import (
 
 
 # Configure GPU for optimal performance
-def configure_gpu():
+def configure_gpu(config=None):
     # Enable GPU memory growth
     physical_devices = tf.config.list_physical_devices("GPU")
     if len(physical_devices) > 0:
@@ -42,8 +42,7 @@ def configure_gpu():
                 print(f"Error setting memory growth: {e}")
 
         # Try to limit memory growth if specified in config
-        config = import_train_configuration(config_file="training_settings.ini")
-        if config.get("hardware", {}).get("gpu_memory_limit"):
+        if config and config.get("hardware", {}).get("gpu_memory_limit"):
             try:
                 limit = int(config["hardware"]["gpu_memory_limit"])
                 tf.config.set_logical_device_configuration(
@@ -57,7 +56,16 @@ def configure_gpu():
         print("No GPUs found. Running on CPU.")
 
     # Enable XLA optimization if specified
-    if config.get("hardware", {}).get("xla_optimization", "False").lower() == "true":
+    xla_setting = config and config.get("hardware", {}).get("xla_optimization", False)
+    xla_enabled = False
+    
+    # Handle both string and boolean values
+    if isinstance(xla_setting, str):
+        xla_enabled = xla_setting.lower() == "true"
+    elif isinstance(xla_setting, bool):
+        xla_enabled = xla_setting
+        
+    if xla_enabled:
         tf.config.optimizer.set_jit(True)
         print("XLA optimization enabled")
 
@@ -322,11 +330,11 @@ def create_comparative_plots(results, base_path):
 
 
 if __name__ == "__main__":
-    # Configure GPU for optimal performance
-    configure_gpu()
-
     # Import configuration
     config = import_train_configuration(config_file="training_settings.ini")
+    
+    # Configure GPU for optimal performance
+    configure_gpu(config)
 
     # Get agent type to train
     agent_type = config["agent_type"]
