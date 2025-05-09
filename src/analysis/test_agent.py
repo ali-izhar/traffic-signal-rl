@@ -390,7 +390,9 @@ def run_test_episode(
             run_mode = "dqn"
             sumocfg_filename = "sumo_config.sumocfg"
             print("Running in DQN AGENT mode.")
-        sumocfg_file_path = os.path.join(script_dir, "intersection", sumocfg_filename)
+        sumocfg_file_path = os.path.join(
+            script_dir, "..", "environment", "intersection", sumocfg_filename
+        )
 
     if not os.path.exists(sumocfg_file_path):
         # If rebuilt file doesn't exist, maybe netconvert failed? Fallback to old actuated config.
@@ -403,7 +405,7 @@ def run_test_episode(
             )
             sumocfg_filename = "sumo_config_actuated.sumocfg"
             sumocfg_file_path = os.path.join(
-                script_dir, "intersection", sumocfg_filename
+                script_dir, "..", "environment", "intersection", sumocfg_filename
             )
             if not os.path.exists(sumocfg_file_path):
                 return print(

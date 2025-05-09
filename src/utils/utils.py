@@ -140,7 +140,7 @@ def set_sumo(gui: bool, sumocfg_file_name: str, max_steps: int) -> List[str]:
     sumo_cmd = [
         sumoBinary,
         "-c",
-        os.path.join("intersection", sumocfg_file_name),
+        os.path.join("src", "environment", "intersection", sumocfg_file_name),
         "--no-step-log",
         "true",
         "--waiting-time-memory",
