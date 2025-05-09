@@ -200,10 +200,4 @@ tensorboard/
 # wandb logs
 wandb/
 
-# tmp txt files
-*tmp*.txt
-
-# legacy
-src1/
-
-src/models*/
+models/

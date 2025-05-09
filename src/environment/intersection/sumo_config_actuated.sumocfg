@@ -1,0 +1,13 @@
+<configuration>
+    <!-- Copy sumo_config.sumocfg to sumo_config_actuated.sumocfg first -->
+    <!-- Then, modify the <net-file> value and add the <additional-files> element -->
+    <input>
+        <net-file value="environment_actuated.net.xml"/>
+        <route-files value="episode_routes.rou.xml"/>
+    </input>
+
+    <time>
+        <begin value="0"/>
+    </time>
+
+</configuration> 

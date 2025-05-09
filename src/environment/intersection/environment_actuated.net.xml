@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- CHANGE THIS FILE MANUALLY: This is the content for environment_actuated.net.xml -->
+<!-- Copy environment.net.xml to environment_actuated.net.xml first -->
+<!-- Then, find the <tlLogic id="TL" type="static" ...> block and REPLACE it with the following -->
+<!-- Make sure the rest of the file (edges, junctions, etc.) remains the same as environment.net.xml -->
+
+<!-- Replace the existing tlLogic block with this one -->
+    <tlLogic id="TL" type="actuated" programID="actuated_prog" offset="0">
+        <!-- Parameters (adjust as needed) -->
+        <param key="max-gap" value="3.0"/>
+        <param key="detector-gap" value="2.0"/>
+        <param key="show-detectors" value="true"/>
+        
+        <!-- Phase Definitions for Actuated Logic -->
+        <!-- Green phases correspond to DQN actions 0, 1, 2, 3 -->
+        <!-- Phases should map to detector groups -->
+        
+        <!-- Phase 0: N-S Green (Thru/Right) -->
+        <phase duration="10" minDur="5" maxDur="30" state="GGGGrrrrrrGGGGrrrrrr" name="NS_Green"/> 
+        <!-- Yellow for Phase 0 -->
+        <phase duration="4" state="yyyyrrrrrryyyyrrrrrr" name="NS_Yell"/>
+        
+        <!-- Phase 2: N-S Left Green -->
+        <phase duration="10" minDur="5" maxDur="30" state="rrrrGrrrrrrrrrGrrrrr" name="NSL_Green"/>
+        <!-- Yellow for Phase 2 -->
+        <phase duration="4" state="rrrryrrrrrrrrryrrrrr" name="NSL_Yell"/>
+        
+        <!-- Phase 4: E-W Green (Thru/Right) -->
+        <phase duration="10" minDur="5" maxDur="30" state="rrrrrGGGGrrrrrrGGGGr" name="EW_Green"/>
+        <!-- Yellow for Phase 4 -->
+        <phase duration="4" state="rrrrryyyyrrrrrryyyyr" name="EW_Yell"/>
+        
+        <!-- Phase 6: E-W Left Green -->
+        <phase duration="10" minDur="5" maxDur="30" state="rrrrrrrrrGrrrrrrrrrG" name="EWL_Green"/>
+        <!-- Yellow for Phase 6 -->
+        <phase duration="4" state="rrrrrrrrryrrrrrrrrry" name="EWL_Yell"/>
+    </tlLogic>
+<!-- End of tlLogic block replacement -->
+
+<!-- REST OF THE FILE should be identical to environment.net.xml --> 

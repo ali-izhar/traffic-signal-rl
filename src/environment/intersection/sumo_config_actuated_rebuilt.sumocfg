@@ -1,0 +1,12 @@
+<configuration>
+    <input>
+        <net-file value="environment_actuated_rebuilt.net.xml"/>
+        <route-files value="episode_routes.rou.xml"/>
+        <!-- No additional-files needed; detectors are built-in by netconvert -->
+    </input>
+
+    <time>
+        <begin value="0"/>
+    </time>
+
+</configuration> 

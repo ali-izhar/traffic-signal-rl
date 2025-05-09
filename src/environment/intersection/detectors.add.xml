@@ -1,0 +1,22 @@
+<additional>
+    <!-- Detectors for Actuated Traffic Light -->
+    <!-- Place detectors ~5m before the stop line for presence/gap detection -->
+    <!-- Adjust detector IDs and positions based on precise lane geometry if needed -->
+
+    <!-- Northbound Approach -->
+    <inductionLoop id="det_N_Thru" lane="N2TL_1" pos="745" freq="900" file="nul" friendlyPos="true"/>
+    <inductionLoop id="det_N_Left" lane="N2TL_3" pos="745" freq="900" file="nul" friendlyPos="true"/> 
+    
+    <!-- Southbound Approach -->
+    <inductionLoop id="det_S_Thru" lane="S2TL_1" pos="745" freq="900" file="nul" friendlyPos="true"/>
+    <inductionLoop id="det_S_Left" lane="S2TL_3" pos="745" freq="900" file="nul" friendlyPos="true"/>
+
+    <!-- Eastbound Approach -->
+    <inductionLoop id="det_E_Thru" lane="E2TL_1" pos="745" freq="900" file="nul" friendlyPos="true"/>
+    <inductionLoop id="det_E_Left" lane="E2TL_3" pos="745" freq="900" file="nul" friendlyPos="true"/>
+
+    <!-- Westbound Approach -->
+    <inductionLoop id="det_W_Thru" lane="W2TL_1" pos="745" freq="900" file="nul" friendlyPos="true"/>
+    <inductionLoop id="det_W_Left" lane="W2TL_3" pos="745" freq="900" file="nul" friendlyPos="true"/>
+
+</additional> 

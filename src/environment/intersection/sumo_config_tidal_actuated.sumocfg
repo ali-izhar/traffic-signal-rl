@@ -1,0 +1,12 @@
+<configuration>
+    <input>
+        <net-file value="environment_actuated_rebuilt.net.xml"/>
+        <route-files value="tidal_flow_routes.rou.xml"/>
+        <!-- No additional-files needed for detectors with rebuilt net -->
+    </input>
+
+    <time>
+        <begin value="0"/>
+    </time>
+
+</configuration> 

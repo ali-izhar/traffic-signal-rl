@@ -1,0 +1,11 @@
+<configuration>
+    <input>
+        <net-file value="environment.net.xml"/>
+        <route-files value="tidal_flow_routes.rou.xml"/>
+    </input>
+
+    <time>
+        <begin value="0"/>
+    </time>
+
+</configuration> 
