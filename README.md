@@ -6,7 +6,40 @@
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-2.0%2B-orange)
 ![SUMO](https://img.shields.io/badge/SUMO-1.8.0%2B-brightgreen)
 
-A modular framework for optimizing traffic signal timing using Deep Reinforcement Learning. This project demonstrates how intelligent traffic control can reduce congestion, waiting times, and emissions in urban environments.
+A modular framework for optimizing traffic signal timing using Deep Reinforcement Learning. This project demonstrates how intelligent traffic control can reduce congestion, waiting times, and emissions in urban environments. After training, the system generates performance plots:
+
+### Training Performance
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+  <div style="flex: 1; min-width: 300px; max-width: 45%;">
+    <img src="assets/plot_delay.png" alt="Cumulative Delay" style="width: 100%;">
+    <p><em>Reduction in cumulative delay from ~70,000 to ~12,000 seconds over 250 training episodes.</em></p>
+  </div>
+  <div style="flex: 1; min-width: 300px; max-width: 45%;">
+    <img src="assets/plot_reward.png" alt="Cumulative Reward" style="width: 100%;">
+    <p><em>Improvement in cumulative reward as the agent learns more effective control strategies.</em></p>
+  </div>
+</div>
+
+<div style="display: flex; justify-content: center; margin-top: 10px;">
+  <div style="width: 60%;">
+    <img src="assets/plot_queue.png" alt="Average Queue Length" style="width: 100%;">
+    <p><em>Reduction in average queue length from ~13 vehicles to ~2 vehicles, showing improved congestion management.</em></p>
+  </div>
+</div>
+
+### Comparative Analysis
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+  <div style="flex: 1; min-width: 300px; max-width: 45%;">
+    <img src="assets/wait_time_3way.png" alt="Waiting Time Comparison" style="width: 100%;">
+    <p><em>Comparison of waiting times between DQN (blue), fixed-time (orange), and actuated (green) controllers. The DQN controller achieves a 99.7% reduction compared to fixed-timing.</em></p>
+  </div>
+  <div style="flex: 1; min-width: 300px; max-width: 45%;">
+    <img src="assets/queue_length_3way.png" alt="Queue Length Comparison" style="width: 100%;">
+    <p><em>Comparison of queue lengths between control strategies. The DQN controller maintains queue lengths 95.8% lower than fixed-timing.</em></p>
+  </div>
+</div>
 
 ## 📋 Overview
 
@@ -136,43 +169,6 @@ Key parameters in the training configuration file:
 | learning_rate | Neural network learning rate | 0.001 |
 | memory_size_max | Maximum replay buffer size | 50000 |
 | gamma | Reward discount factor | 0.75 |
-
-## 📊 Results and Visualization
-
-After training, the system generates performance plots:
-
-### Training Performance
-
-<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
-  <div style="flex: 1; min-width: 300px; max-width: 45%;">
-    <img src="assets/plot_delay.png" alt="Cumulative Delay" style="width: 100%;">
-    <p><em>Reduction in cumulative delay from ~70,000 to ~12,000 seconds over 250 training episodes.</em></p>
-  </div>
-  <div style="flex: 1; min-width: 300px; max-width: 45%;">
-    <img src="assets/plot_reward.png" alt="Cumulative Reward" style="width: 100%;">
-    <p><em>Improvement in cumulative reward as the agent learns more effective control strategies.</em></p>
-  </div>
-</div>
-
-<div style="display: flex; justify-content: center; margin-top: 10px;">
-  <div style="width: 60%;">
-    <img src="assets/plot_queue.png" alt="Average Queue Length" style="width: 100%;">
-    <p><em>Reduction in average queue length from ~13 vehicles to ~2 vehicles, showing improved congestion management.</em></p>
-  </div>
-</div>
-
-### Comparative Analysis
-
-<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
-  <div style="flex: 1; min-width: 300px; max-width: 45%;">
-    <img src="assets/wait_time_3way.png" alt="Waiting Time Comparison" style="width: 100%;">
-    <p><em>Comparison of waiting times between DQN (blue), fixed-time (orange), and actuated (green) controllers. The DQN controller achieves a 99.7% reduction compared to fixed-timing.</em></p>
-  </div>
-  <div style="flex: 1; min-width: 300px; max-width: 45%;">
-    <img src="assets/queue_length_3way.png" alt="Queue Length Comparison" style="width: 100%;">
-    <p><em>Comparison of queue lengths between control strategies. The DQN controller maintains queue lengths 95.8% lower than fixed-timing.</em></p>
-  </div>
-</div>
 
 ## 🧪 Experiments
 
