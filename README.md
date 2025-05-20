@@ -6,6 +6,8 @@
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-2.0%2B-orange)
 ![SUMO](https://img.shields.io/badge/SUMO-1.8.0%2B-brightgreen)
 
+[adaptive_traffic_signal_control.pdf](assets/adaptive_traffic_signal_control.pdf) 
+
 A modular framework for optimizing traffic signal timing using Deep Reinforcement Learning. This project demonstrates how intelligent traffic control can reduce congestion, waiting times, and emissions in urban environments. After training, the system generates performance plots:
 
 ### Training Performance
